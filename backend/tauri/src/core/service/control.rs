@@ -116,7 +116,7 @@ pub async fn update_service() -> anyhow::Result<()> {
             match sudo(SERVICE_PATH.to_string_lossy(), ARGS) {
                 Ok(()) => Ok(std::process::ExitStatus::from_raw(0)),
                 Err(e) => {
-                    tracing::error!("failed to install service: {}", e);
+                    tracing::error!("failed to update service: {}", e);
                     Err(e)
                 }
             }
@@ -156,10 +156,11 @@ pub async fn uninstall_service() -> anyhow::Result<()> {
         #[cfg(target_os = "macos")]
         {
             use crate::utils::sudo::sudo;
+            const ARGS: &[&str] = &["uninstall"];
             match sudo(SERVICE_PATH.to_string_lossy(), ARGS) {
                 Ok(()) => Ok(std::process::ExitStatus::from_raw(0)),
                 Err(e) => {
-                    tracing::error!("failed to install service: {}", e);
+                    tracing::error!("failed to uninstall service: {}", e);
                     Err(e)
                 }
             }
@@ -183,22 +184,40 @@ pub async fn uninstall_service() -> anyhow::Result<()> {
 
 pub async fn start_service() -> anyhow::Result<()> {
     let child = tokio::task::spawn_blocking(move || {
-        const ARGS: &[&str] = &["start"];
         #[cfg(not(target_os = "macos"))]
         {
-            RunasCommand::new(SERVICE_PATH.as_path())
-                .args(ARGS)
+            #[cfg(all(unix, not(target_os = "macos")))]
+            let status = {
+                let service = SERVICE_PATH.to_string_lossy();
+                let cmd = format!(
+                    "\"{}\" start; for i in $(seq 1 20); do [ -S /run/nyanpasu_ipc.sock ] && break; sleep 0.1; done; if [ -S /run/nyanpasu_ipc.sock ]; then chown root:nyanpasu /run/nyanpasu_ipc.sock && chmod 660 /run/nyanpasu_ipc.sock; fi",
+                    service
+                );
+                RunasCommand::new("/bin/sh")
+                    .arg("-c")
+                    .arg(cmd)
+                    .gui(true)
+                    .show(true)
+                    .status()
+            };
+
+            #[cfg(not(all(unix, not(target_os = "macos"))))]
+            let status = RunasCommand::new(SERVICE_PATH.as_path())
+                .args(["start"])
                 .gui(true)
                 .show(true)
-                .status()
+                .status();
+
+            status
         }
         #[cfg(target_os = "macos")]
         {
             use crate::utils::sudo::sudo;
+            const ARGS: &[&str] = &["start"];
             match sudo(SERVICE_PATH.to_string_lossy(), ARGS) {
                 Ok(()) => Ok(std::process::ExitStatus::from_raw(0)),
                 Err(e) => {
-                    tracing::error!("failed to install service: {}", e);
+                    tracing::error!("failed to start service: {}", e);
                     Err(e)
                 }
             }
@@ -241,6 +260,7 @@ pub async fn stop_service() -> anyhow::Result<()> {
         #[cfg(target_os = "macos")]
         {
             use crate::utils::sudo::sudo;
+            const ARGS: &[&str] = &["restart"];
             match sudo(SERVICE_PATH.to_string_lossy(), ARGS) {
                 Ok(()) => Ok(std::process::ExitStatus::from_raw(0)),
                 Err(e) => {
@@ -278,22 +298,40 @@ pub async fn stop_service() -> anyhow::Result<()> {
 
 pub async fn restart_service() -> anyhow::Result<()> {
     let child = tokio::task::spawn_blocking(move || {
-        const ARGS: &[&str] = &["restart"];
         #[cfg(not(target_os = "macos"))]
         {
-            RunasCommand::new(SERVICE_PATH.as_path())
-                .args(ARGS)
+            #[cfg(all(unix, not(target_os = "macos")))]
+            let status = {
+                let service = SERVICE_PATH.to_string_lossy();
+                let cmd = format!(
+                    "\"{}\" restart; for i in $(seq 1 20); do [ -S /run/nyanpasu_ipc.sock ] && break; sleep 0.1; done; if [ -S /run/nyanpasu_ipc.sock ]; then chown root:nyanpasu /run/nyanpasu_ipc.sock && chmod 660 /run/nyanpasu_ipc.sock; fi",
+                    service
+                );
+                RunasCommand::new("/bin/sh")
+                    .arg("-c")
+                    .arg(cmd)
+                    .gui(true)
+                    .show(true)
+                    .status()
+            };
+
+            #[cfg(not(all(unix, not(target_os = "macos"))))]
+            let status = RunasCommand::new(SERVICE_PATH.as_path())
+                .args(["restart"])
                 .gui(true)
                 .show(true)
-                .status()
+                .status();
+
+            status
         }
         #[cfg(target_os = "macos")]
         {
             use crate::utils::sudo::sudo;
+            const ARGS: &[&str] = &["restart"];
             match sudo(SERVICE_PATH.to_string_lossy(), ARGS) {
                 Ok(()) => Ok(std::process::ExitStatus::from_raw(0)),
                 Err(e) => {
-                    tracing::error!("failed to install service: {}", e);
+                    tracing::error!("failed to restart service: {}", e);
                     Err(e)
                 }
             }
@@ -329,6 +367,13 @@ pub async fn status<'a>() -> anyhow::Result<nyanpasu_ipc::types::StatusInfo<'a>>
     #[cfg(windows)]
     cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     let output = cmd.output().await?;
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    if stderr.contains("Permission denied") || stderr.contains("os error 13") {
+        anyhow::bail!(
+            "failed to query service status: permission denied. Ensure the current user has access to the service IPC socket (e.g. re-login after adding to the nyanpasu group). Details: {}",
+            stderr.trim()
+        );
+    }
     if !output.status.success() {
         anyhow::bail!(
             "failed to query service status, exit code: {}, signal: {:?}",

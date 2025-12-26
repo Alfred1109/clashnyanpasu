@@ -46,7 +46,7 @@ pub fn use_tun(mut config: Mapping, enable: bool) -> Mapping {
         };
         if core == ClashCore::ClashRs {
             append!(tun_val, "device-id", "dev://utun1989");
-            append!(tun_val, "auto-route", true);
+            revise!(tun_val, "auto-route", true);
         } else {
             let mut tun_stack = {
                 *Config::verge()
@@ -60,7 +60,7 @@ pub fn use_tun(mut config: Mapping, enable: bool) -> Mapping {
             }
             append!(tun_val, "stack", AsRef::<str>::as_ref(&tun_stack));
             append!(tun_val, "dns-hijack", vec!["any:53"]);
-            append!(tun_val, "auto-route", true);
+            revise!(tun_val, "auto-route", true);
             append!(tun_val, "auto-detect-interface", true);
         }
     }

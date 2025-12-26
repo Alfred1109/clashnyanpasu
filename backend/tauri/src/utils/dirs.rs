@@ -335,6 +335,8 @@ pub fn check_core_permission(core: &nyanpasu_utils::core::CoreType) -> anyhow::R
     use anyhow::Context;
     use nix::unistd::{Gid, Group as NixGroup, Uid, User};
     use std::os::unix::fs::MetadataExt;
+    #[cfg(target_os = "linux")]
+    use std::process::Command;
 
     let core_path =
         crate::core::clash::core::find_binary_path(core).context("clash core not found")?;
@@ -346,6 +348,19 @@ pub fn check_core_permission(core: &nyanpasu_utils::core::CoreType) -> anyhow::R
     if let (Some(user), Some(group)) = (user, group) {
         if user.name == "root" && group.name == ROOT_GROUP {
             return Ok(true);
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let output = Command::new("getcap").arg(&core_path).output();
+        if let Ok(output) = output {
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                if stdout.contains("cap_net_admin") && stdout.contains("+ep") {
+                    return Ok(true);
+                }
+            }
         }
     }
     Ok(false)
