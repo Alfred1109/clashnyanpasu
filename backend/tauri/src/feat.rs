@@ -119,8 +119,10 @@ pub fn toggle_system_proxy() {
     let enable = enable.unwrap_or(false);
 
     tauri::async_runtime::spawn(async move {
+        // 实现互斥：启用系统代理时自动关闭TUN模式
         match patch_verge(IVerge {
             enable_system_proxy: Some(!enable),
+            enable_tun_mode: if !enable { Some(false) } else { None }, // 启用系统代理时关闭TUN
             ..IVerge::default()
         })
         .await
@@ -167,8 +169,10 @@ pub fn toggle_tun_mode() {
     let enable = enable.unwrap_or(false);
 
     tauri::async_runtime::spawn(async move {
+        // 实现互斥：启用TUN模式时自动关闭系统代理
         match patch_verge(IVerge {
             enable_tun_mode: Some(!enable),
+            enable_system_proxy: if !enable { Some(false) } else { None }, // 启用TUN时关闭系统代理
             ..IVerge::default()
         })
         .await

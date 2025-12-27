@@ -359,13 +359,30 @@ mod platform_impl {
         let tray_proxies = super::to_tray_proxies(mode.as_str(), &proxies);
         let items = generate_selectors::<R>(app_handle, &tray_proxies)?;
 
-        // 始终将代理节点放入子菜单中，保持托盘菜单简洁
-        let mut submenu =
-            SubmenuBuilder::with_id(app_handle, "select_proxies", t!("tray.select_proxies"));
-        for item in items {
-            submenu = submenu.item(&item);
+        // 检查选择器模式，决定如何显示代理节点
+        match selector_mode {
+            ProxiesSelectorMode::Normal => {
+                // 普通模式：显示代理组子菜单，每个组内显示具体节点
+                let mut submenu = SubmenuBuilder::with_id(
+                    app_handle,
+                    "select_proxies",
+                    t!("tray.select_proxies"),
+                );
+                for item in items {
+                    submenu = submenu.item(&item);
+                }
+                menu = menu.item(&submenu.build()?);
+            }
+            ProxiesSelectorMode::Submenu => {
+                // 子菜单模式：直接在主菜单层级显示代理组
+                for item in items {
+                    menu = menu.item(&item);
+                }
+            }
+            _ => {
+                // 隐藏模式已在上面处理，这里不会到达
+            }
         }
-        menu = menu.item(&submenu.build()?);
 
         Ok(menu)
     }

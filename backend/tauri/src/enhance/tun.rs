@@ -53,6 +53,7 @@ pub fn use_tun(mut config: Mapping, enable: bool) -> Mapping {
             .unwrap_or(&ClashCore::default())
     };
     if core == ClashCore::ClashRs || core == ClashCore::ClashRsAlpha {
+        // Enhanced clash-rs TUN configuration
         #[cfg(target_os = "macos")]
         append!(tun_val, "device-id", "dev://utun1989");
         #[cfg(not(target_os = "macos"))]
@@ -60,7 +61,38 @@ pub fn use_tun(mut config: Mapping, enable: bool) -> Mapping {
             let key = Value::String("device-id".into());
             tun_val.remove(&key);
         }
+
+        // Enable auto-route for clash-rs
         revise!(tun_val, "auto-route", true);
+
+        // Set required address ranges for clash-rs
+        append!(tun_val, "inet4-address", vec!["172.19.0.1/30"]);
+        append!(tun_val, "inet6-address", vec!["fdfe:dcba:9876::1/126"]);
+
+        // Set optimal MTU for clash-rs
+        append!(tun_val, "mtu", 9000);
+
+        // Enable endpoint-independent NAT for better compatibility
+        append!(tun_val, "endpoint-independent-nat", true);
+
+        // Remove fields that clash-rs doesn't support to prevent crashes
+        let unsupported_keys = vec![
+            "stack",
+            "dns-hijack",
+            "auto-detect-interface",
+            "strict-route",
+            "route-address-set",
+            "route-exclude-address-set",
+            "include-uid",
+            "exclude-uid",
+            "include-uid-range",
+            "exclude-uid-range",
+        ];
+
+        for key_str in unsupported_keys {
+            let key = Value::String(key_str.into());
+            tun_val.remove(&key);
+        }
     } else {
         let mut tun_stack = {
             *Config::verge()
