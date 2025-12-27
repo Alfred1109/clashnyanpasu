@@ -1,65 +1,11 @@
-import { useLockFn } from 'ahooks'
-import { useSetAtom } from 'jotai'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import LogoSvg from '@/assets/image/logo.svg?react'
-import { checkUpdate, useUpdaterPlatformSupported } from '@/hooks/use-updater'
-import { UpdaterInstanceAtom } from '@/store/updater'
-import { formatError } from '@/utils'
-import { message } from '@/utils/notification'
-import { Box, Button, List, ListItem, Paper, Typography } from '@mui/material'
-import { useSetting } from '@nyanpasu/interface'
+import { Box, List, ListItem, Paper, Typography } from '@mui/material'
 import { alpha, BaseCard } from '@nyanpasu/ui'
 import { version } from '@root/package.json'
-import { LabelSwitch } from './modules/clash-field'
-
-const AutoCheckUpdate = () => {
-  const { t } = useTranslation()
-
-  const { value, upsert } = useSetting('enable_auto_check_update')
-
-  return (
-    <LabelSwitch
-      label={t('Auto Check Updates')}
-      checked={value ?? true}
-      onChange={() => upsert(!value)}
-    />
-  )
-}
 
 export const SettingNyanpasuVersion = () => {
   const { t } = useTranslation()
-
-  const [loading, setLoading] = useState(false)
-
-  const setUpdaterInstance = useSetAtom(UpdaterInstanceAtom)
-  const isPlatformSupported = useUpdaterPlatformSupported()
-  const onCheckUpdate = useLockFn(async () => {
-    try {
-      setLoading(true)
-
-      const update = await checkUpdate()
-
-      if (!update) {
-        message(t('No update available.'), {
-          title: t('Info'),
-          kind: 'info',
-        })
-      } else {
-        setUpdaterInstance(update || null)
-      }
-    } catch (e) {
-      message(
-        `Update check failed. Please verify your network connection.\n\n${formatError(e)}`,
-        {
-          title: t('Error'),
-          kind: 'error',
-        },
-      )
-    } finally {
-      setLoading(false)
-    }
-  })
 
   return (
     <BaseCard label={t('Nyanpasu Version')}>
@@ -94,24 +40,7 @@ export const SettingNyanpasuVersion = () => {
           </Paper>
         </ListItem>
 
-        {isPlatformSupported && (
-          <>
-            <div className="mt-1 mb-1">
-              <AutoCheckUpdate />
-            </div>
-            <ListItem sx={{ pl: 0, pr: 0 }}>
-              <Button
-                variant="contained"
-                size="large"
-                loading={loading}
-                onClick={onCheckUpdate}
-                sx={{ width: '100%' }}
-              >
-                {t('Check for Updates')}
-              </Button>
-            </ListItem>
-          </>
-        )}
+        {/* 更新功能已禁用 */}
       </List>
     </BaseCard>
   )

@@ -251,7 +251,14 @@ mod platform_impl {
             );
             return Ok(group_menu.build()?);
         }
-        for item in group.all.iter() {
+
+        // 限制显示的代理节点数量，避免菜单过长
+        const MAX_DISPLAY_NODES: usize = 12;
+        let total_nodes = group.all.len();
+        let display_nodes = if total_nodes > MAX_DISPLAY_NODES { MAX_DISPLAY_NODES } else { total_nodes };
+        
+        // 显示前N个节点
+        for item in group.all.iter().take(display_nodes) {
             let key = (group_name.to_string(), item.to_string());
             let id = item_ids.len();
             item_ids.insert(key, id);
@@ -270,6 +277,18 @@ mod platform_impl {
 
             group_menu = group_menu.item(&sub_item_builder.build(app_handle)?);
         }
+
+        // 如果有更多节点，添加提示信息
+        if total_nodes > MAX_DISPLAY_NODES {
+            group_menu = group_menu
+                .separator()
+                .item(
+                    &MenuItemBuilder::new(format!("... ({} more nodes)", total_nodes - MAX_DISPLAY_NODES))
+                        .enabled(false)
+                        .build(app_handle)?,
+                );
+        }
+
         Ok(group_menu.build()?)
     }
 
@@ -306,34 +325,28 @@ mod platform_impl {
             .latest()
             .clash_tray_selector
             .unwrap_or_default();
-        menu = match selector_mode {
-            ProxiesSelectorMode::Hidden => return Ok(menu),
-            ProxiesSelectorMode::Normal => menu.separator(),
-            ProxiesSelectorMode::Submenu => menu,
-        };
+        
+        // 如果隐藏代理选择器，直接返回
+        if selector_mode == ProxiesSelectorMode::Hidden {
+            return Ok(menu);
+        }
+        
         let proxies = ProxiesGuard::global().read().inner().to_owned();
         let mode = crate::utils::config::get_current_clash_mode();
         let tray_proxies = super::to_tray_proxies(mode.as_str(), &proxies);
         let items = generate_selectors::<R>(app_handle, &tray_proxies)?;
-        match selector_mode {
-            ProxiesSelectorMode::Normal => {
-                for item in items {
-                    menu = menu.item(&item);
-                }
-            }
-            ProxiesSelectorMode::Submenu => {
-                let mut submenu = SubmenuBuilder::with_id(
-                    app_handle,
-                    "select_proxies",
-                    t!("tray.select_proxies"),
-                );
-                for item in items {
-                    submenu = submenu.item(&item);
-                }
-                menu = menu.item(&submenu.build()?);
-            }
-            _ => {}
+        
+        // 始终将代理节点放入子菜单中，保持托盘菜单简洁
+        let mut submenu = SubmenuBuilder::with_id(
+            app_handle,
+            "select_proxies",
+            t!("tray.select_proxies"),
+        );
+        for item in items {
+            submenu = submenu.item(&item);
         }
+        menu = menu.item(&submenu.build()?);
+        
         Ok(menu)
     }
 

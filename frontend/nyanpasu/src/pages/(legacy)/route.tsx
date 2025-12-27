@@ -4,8 +4,8 @@ import MutationProvider from '@/components/layout/mutation-provider'
 import NoticeProvider from '@/components/layout/notice-provider'
 import PageTransition from '@/components/layout/page-transition'
 import SchemeProvider from '@/components/layout/scheme-provider'
-import UpdaterDialog from '@/components/updater/updater-dialog-wrapper'
-import { UpdaterProvider } from '@/hooks/use-updater'
+// import UpdaterDialog from '@/components/updater/updater-dialog-wrapper'
+// import { UpdaterProvider } from '@/hooks/use-updater'
 import { FileRouteTypes } from '@/route-tree.gen'
 import { atomIsDrawer, memorizedRoutePathAtom } from '@/store'
 import { useSettings } from '@nyanpasu/interface'
@@ -65,8 +65,8 @@ function Layout() {
         <MutationProvider />
         <NoticeProvider />
         <SchemeProvider />
-        <UpdaterDialog />
-        <UpdaterProvider />
+        {/* <UpdaterDialog /> */}
+        {/* <UpdaterProvider /> */}
         <AppContainer isDrawer={isDrawer}>
           <PageTransition
             className={cn('absolute inset-4 top-10', !isDrawer && 'left-0')}
