@@ -5,7 +5,12 @@ import { formatError } from '@/utils'
 import { message } from '@/utils/notification'
 import { InputAdornment, List, ListItem } from '@mui/material'
 import Grid from '@mui/material/Grid'
-import { useSetting, useSystemProxy } from '@nyanpasu/interface'
+import {
+  toggleSystemProxy,
+  toggleTunMode,
+  useSetting,
+  useSystemProxy,
+} from '@nyanpasu/interface'
 import {
   BaseCard,
   Expand,
@@ -23,7 +28,7 @@ const TunModeButton = () => {
 
   const handleTunMode = useLockFn(async () => {
     try {
-      await tunMode.upsert(!tunMode.value)
+      await toggleTunMode()
     } catch (error) {
       message(`Activation TUN Mode failed! \n Error: ${formatError(error)}`, {
         title: t('Error'),
@@ -48,7 +53,7 @@ const SystemProxyButton = () => {
 
   const handleSystemProxy = useLockFn(async () => {
     try {
-      await systemProxy.upsert(!systemProxy.value)
+      await toggleSystemProxy()
     } catch (error) {
       message(`Activation System Proxy failed!`, {
         title: t('Error'),

@@ -11,8 +11,6 @@
     </util:CloseApplication>
     <util:CloseApplication Id="NyanpasuCloseMihomoAlpha" Target="mihomo-alpha.exe" CloseMessage="yes" RebootPrompt="no" TerminateProcess="1">
     </util:CloseApplication>
-    <util:CloseApplication Id="NyanpasuCloseService" Target="clash-rs.exe" CloseMessage="yes" RebootPrompt="no" TerminateProcess="1">
-    </util:CloseApplication>
     <util:CloseApplication Id="NyanpasuCloseService" Target="clash.exe" CloseMessage="yes" RebootPrompt="no" TerminateProcess="1">
     </util:CloseApplication>
   </Fragment>

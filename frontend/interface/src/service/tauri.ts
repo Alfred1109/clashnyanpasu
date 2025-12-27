@@ -19,6 +19,14 @@ export const patchNyanpasuConfig = async (payload: VergeConfig) => {
   return await invoke<void>('patch_verge_config', { payload })
 }
 
+export const toggleSystemProxy = async () => {
+  return await invoke<void>('toggle_system_proxy')
+}
+
+export const toggleTunMode = async () => {
+  return await invoke<void>('toggle_tun_mode')
+}
+
 export const getClashInfo = async () => {
   return await invoke<ClashInfo | null>('get_clash_info')
 }

@@ -458,7 +458,6 @@ pub async fn resolve_core_version(app_handle: &AppHandle, core_type: &ClashCore)
         ClashCore::ClashPremium | ClashCore::Mihomo | ClashCore::MihomoAlpha => {
             shell.sidecar(core)?.args(["-v"])
         }
-        ClashCore::ClashRs | ClashCore::ClashRsAlpha => shell.sidecar(core)?.args(["-V"]),
     };
     let out = cmd.output().await?;
     if !out.status.success() {
@@ -468,16 +467,14 @@ pub async fn resolve_core_version(app_handle: &AppHandle, core_type: &ClashCore)
     log::trace!(target: "app", "get core version: {out:?}");
     let out = out.trim().split(' ').collect::<Vec<&str>>();
     for item in out {
-        log::debug!(target: "app", "check item: {item}");
         if item.starts_with('v')
-            || item.starts_with('n')
-            || item.starts_with("alpha")
+            || item.starts_with("Clash")
+            || item.starts_with("clash")
+            || item.starts_with("meta")
+            || item.starts_with("mihomo")
             || Version::parse(item).is_ok()
         {
-            match core_type {
-                ClashCore::ClashRs => return Ok(format!("v{}", item)),
-                _ => return Ok(item.to_string()),
-            }
+            return Ok(item.to_string());
         }
     }
     Err(anyhow::anyhow!("failed to get core version"))

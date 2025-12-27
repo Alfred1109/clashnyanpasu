@@ -36,8 +36,6 @@
       "sidecar/clash",
       "sidecar/mihomo",
       "sidecar/mihomo-alpha",
-      "sidecar/clash-rs",
-      "sidecar/clash-rs-alpha",
       "sidecar/nyanpasu-service"
     ],
     "copyright": "© 2025 Clash Nyanpasu All Rights Reserved",

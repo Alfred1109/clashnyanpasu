@@ -115,22 +115,6 @@ impl ManifestVersion {
                     .replace("{}", &self.latest.mihomo_alpha),
                 CoreTypeMeta::MihomoAlpha,
             )),
-            ClashCore::ClashRs => Some((
-                self.arch_template
-                    .clash_rs
-                    .get(arch)?
-                    .clone()
-                    .replace("{}", &self.latest.clash_rs),
-                CoreTypeMeta::ClashRs(self.latest.clash_rs.clone()),
-            )),
-            ClashCore::ClashRsAlpha => Some((
-                self.arch_template
-                    .clash_rs_alpha
-                    .get(arch)?
-                    .clone()
-                    .replace("{}", &self.latest.clash_rs_alpha),
-                CoreTypeMeta::ClashRsAlpha,
-            )),
         }
     }
 }

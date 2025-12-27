@@ -484,7 +484,6 @@ FunctionEnd
   !insertmacro CheckNyanpasuProcess "clash-nyanpasu.exe" "2"
   ; !insertmacro CheckNyanpasuProcess "clash-verge-service.exe" "3"
   !insertmacro CheckNyanpasuProcess "clash.exe" "4"
-  !insertmacro CheckNyanpasuProcess "clash-rs.exe" "5"
   !insertmacro CheckNyanpasuProcess "mihomo.exe" "6"
   !insertmacro CheckNyanpasuProcess "mihomo-alpha.exe" "7"
 !macroend

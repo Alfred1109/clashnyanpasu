@@ -4,8 +4,6 @@ import { MANIFEST_DIR, MANIFEST_VERSION_PATH } from './utils/env'
 import { consola } from './utils/logger'
 import {
   resolveClashPremium,
-  resolveClashRs,
-  resolveClashRsAlpha,
   resolveMihomo,
   resolveMihomoAlpha,
 } from './utils/manifest'
@@ -13,13 +11,7 @@ import {
 const MANIFEST_VERSION = 1
 
 export async function generateLatestVersion() {
-  const resolvers = [
-    resolveMihomo,
-    resolveMihomoAlpha,
-    resolveClashRs,
-    resolveClashPremium,
-    resolveClashRsAlpha,
-  ]
+  const resolvers = [resolveMihomo, resolveMihomoAlpha, resolveClashPremium]
 
   consola.start('Resolving latest versions')
 

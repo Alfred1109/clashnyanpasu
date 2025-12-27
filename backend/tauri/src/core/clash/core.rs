@@ -186,44 +186,13 @@ impl Instance {
                                         CommandEvent::Error(e) => {
                                             log::error!(target: "app", "[{core_type}]: {e}");
 
-                                            // Enhanced error handling for clash-rs
-                                            let error_msg = if core_type
-                                                .to_string()
-                                                .contains("clash-rs")
-                                            {
-                                                // Check for common clash-rs configuration errors
-                                                if e.contains("SIGSEGV")
-                                                    || e.contains("segmentation fault")
-                                                {
-                                                    format!(
-                                                        "clash-rs crashed due to configuration parsing error. This may be caused by unsupported configuration fields. Error: {}",
-                                                        e
-                                                    )
-                                                } else if e.contains("tun") && e.contains("failed")
-                                                {
-                                                    format!(
-                                                        "clash-rs TUN configuration error. Ensure proper network permissions and valid TUN settings. Error: {}",
-                                                        e
-                                                    )
-                                                } else if e.contains("dns") && e.contains("failed")
-                                                {
-                                                    format!(
-                                                        "clash-rs DNS configuration error. Check DNS server accessibility. Error: {}",
-                                                        e
-                                                    )
-                                                } else {
-                                                    format!("clash-rs error: {}", e)
-                                                }
-                                            } else {
-                                                e.clone()
-                                            };
 
                                             let err = anyhow::anyhow!(format!(
                                                 "{}\n{}",
-                                                error_msg,
+                                                e,
                                                 err_buf.join("\n")
                                             ));
-                                            Logger::global().set_log(error_msg);
+                                            Logger::global().set_log(e.clone());
                                             let _ = tx.send(Err(err)).await;
                                             stated_changed_at
                                                 .store(get_current_ts(), Ordering::Relaxed);

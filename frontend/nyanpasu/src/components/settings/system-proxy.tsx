@@ -4,7 +4,11 @@ import { useBlockTask } from '@/components/providers/block-task-provider'
 import { Button, ButtonProps } from '@/components/ui/button'
 import { CircularProgress } from '@/components/ui/progress'
 import { m } from '@/paraglide/messages'
-import { useSetting } from '@nyanpasu/interface'
+import {
+  toggleSystemProxy,
+  toggleTunMode,
+  useSetting,
+} from '@nyanpasu/interface'
 import { cn } from '@nyanpasu/ui'
 
 const ProxyButton = ({
@@ -51,7 +55,7 @@ export const SystemProxyButton = (
   const systemProxy = useSetting('enable_system_proxy')
 
   const { execute, isPending } = useBlockTask('system-proxy', async () => {
-    await systemProxy.upsert(!systemProxy.value)
+    await toggleSystemProxy()
   })
 
   return (
@@ -73,7 +77,7 @@ export const TunModeButton = (
   const tunMode = useSetting('enable_tun_mode')
 
   const { execute, isPending } = useBlockTask('tun-mode', async () => {
-    await tunMode.upsert(!tunMode.value)
+    await toggleTunMode()
   })
 
   return (

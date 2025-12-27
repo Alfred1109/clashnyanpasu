@@ -143,7 +143,6 @@ pub fn migrate_home_dir_handler(target_path: &str) -> anyhow::Result<()> {
     let related_names = [
         "clash-verge-service",
         "clash-nyanpasu-service", // for upcoming v1.6.x
-        "clash-rs",
         "mihomo",
         "mihomo-alpha",
         "clash",

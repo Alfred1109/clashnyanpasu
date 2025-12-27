@@ -28,9 +28,8 @@ pub fn use_tun(mut config: Mapping, enable: bool) -> Mapping {
     let tun_val = config.get(&tun_key);
     tracing::debug!("tun_val: {:?}, enable: {}", tun_val, enable);
 
-    // Fix: Always ensure tun section exists and has enable field to prevent clash-rs SIGSEGV
+    // Always ensure tun section exists and has enable field
     // Even if enable is false, we need a proper tun section with enable: false
-    // to avoid clash-rs crash when parsing empty/malformed tun config
     let mut tun_val = tun_val.map_or(Mapping::new(), |val| {
         val.as_mapping().cloned().unwrap_or(Mapping::new())
     });
@@ -39,12 +38,12 @@ pub fn use_tun(mut config: Mapping, enable: bool) -> Mapping {
     revise!(tun_val, "enable", enable);
 
     if !enable {
-        // For disabled TUN, still provide minimal valid config to prevent clash-rs crash
+        // For disabled TUN, still provide minimal valid config
         revise!(config, "tun", tun_val);
         return config;
     }
 
-    // TUN is enabled, configure based on core type
+    // TUN is enabled, configure for supported cores
     let core = {
         *Config::verge()
             .latest()
@@ -52,63 +51,21 @@ pub fn use_tun(mut config: Mapping, enable: bool) -> Mapping {
             .as_ref()
             .unwrap_or(&ClashCore::default())
     };
-    if core == ClashCore::ClashRs || core == ClashCore::ClashRsAlpha {
-        // Enhanced clash-rs TUN configuration
-        #[cfg(target_os = "macos")]
-        append!(tun_val, "device-id", "dev://utun1989");
-        #[cfg(not(target_os = "macos"))]
-        {
-            let key = Value::String("device-id".into());
-            tun_val.remove(&key);
-        }
 
-        // Enable auto-route for clash-rs
-        revise!(tun_val, "auto-route", true);
-
-        // Set required address ranges for clash-rs
-        append!(tun_val, "inet4-address", vec!["172.19.0.1/30"]);
-        append!(tun_val, "inet6-address", vec!["fdfe:dcba:9876::1/126"]);
-
-        // Set optimal MTU for clash-rs
-        append!(tun_val, "mtu", 9000);
-
-        // Enable endpoint-independent NAT for better compatibility
-        append!(tun_val, "endpoint-independent-nat", true);
-
-        // Remove fields that clash-rs doesn't support to prevent crashes
-        let unsupported_keys = vec![
-            "stack",
-            "dns-hijack",
-            "auto-detect-interface",
-            "strict-route",
-            "route-address-set",
-            "route-exclude-address-set",
-            "include-uid",
-            "exclude-uid",
-            "include-uid-range",
-            "exclude-uid-range",
-        ];
-
-        for key_str in unsupported_keys {
-            let key = Value::String(key_str.into());
-            tun_val.remove(&key);
-        }
-    } else {
-        let mut tun_stack = {
-            *Config::verge()
-                .latest()
-                .tun_stack
-                .as_ref()
-                .unwrap_or(&TunStack::default())
-        };
-        if core == ClashCore::ClashPremium && tun_stack == TunStack::Mixed {
-            tun_stack = TunStack::Gvisor;
-        }
-        append!(tun_val, "stack", AsRef::<str>::as_ref(&tun_stack));
-        append!(tun_val, "dns-hijack", vec!["any:53"]);
-        revise!(tun_val, "auto-route", true);
-        append!(tun_val, "auto-detect-interface", true);
+    let mut tun_stack = {
+        *Config::verge()
+            .latest()
+            .tun_stack
+            .as_ref()
+            .unwrap_or(&TunStack::default())
+    };
+    if core == ClashCore::ClashPremium && tun_stack == TunStack::Mixed {
+        tun_stack = TunStack::Gvisor;
     }
+    append!(tun_val, "stack", AsRef::<str>::as_ref(&tun_stack));
+    append!(tun_val, "dns-hijack", vec!["any:53"]);
+    revise!(tun_val, "auto-route", true);
+    append!(tun_val, "auto-detect-interface", true);
 
     revise!(config, "tun", tun_val);
     use_dns_for_tun(config)

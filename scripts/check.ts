@@ -43,8 +43,6 @@ const tasks: {
   { name: 'clash', func: () => resolve.clash(), retry: 5 },
   { name: 'mihomo', func: () => resolve.clashMeta(), retry: 5 },
   { name: 'mihomo-alpha', func: () => resolve.clashMetaAlpha(), retry: 5 },
-  { name: 'clash-rs', func: () => resolve.clashRust(), retry: 5 },
-  { name: 'clash-rs-alpha', func: () => resolve.clashRustAlpha(), retry: 5 },
   { name: 'wintun', func: () => resolve.wintun(), retry: 5, winOnly: true },
   {
     name: 'nyanpasu-service',

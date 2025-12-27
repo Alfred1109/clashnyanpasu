@@ -473,10 +473,27 @@ pub fn get_verge_config() -> Result<IVerge> {
     Ok(Config::verge().data().clone())
 }
 
+/// patch verge config
 #[tauri::command]
 #[specta::specta]
 pub async fn patch_verge_config(payload: IVerge) -> Result {
     (feat::patch_verge(payload).await)?;
+    Ok(())
+}
+
+/// toggle system proxy with mutual exclusion
+#[tauri::command]
+#[specta::specta]
+pub fn toggle_system_proxy() -> Result {
+    feat::toggle_system_proxy();
+    Ok(())
+}
+
+/// toggle tun mode with mutual exclusion
+#[tauri::command]
+#[specta::specta]
+pub fn toggle_tun_mode() -> Result {
+    feat::toggle_tun_mode();
     Ok(())
 }
 
