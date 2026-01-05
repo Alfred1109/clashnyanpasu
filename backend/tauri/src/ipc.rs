@@ -530,6 +530,186 @@ pub fn get_sys_proxy() -> Result<GetSysProxyResponse> {
     })
 }
 
+/// 检查TUN模式权限
+#[tauri::command]
+#[specta::specta]
+pub async fn check_tun_permission() -> Result<bool> {
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    {
+        let current_core = Config::verge().data().clash_core.unwrap_or_default();
+        let current_core: nyanpasu_utils::core::CoreType = (&current_core).into();
+        let service_state = crate::core::service::ipc::get_ipc_state();
+        
+        if service_state.is_connected() {
+            // 服务模式下不需要权限检查
+            return Ok(true);
+        }
+        
+        match crate::utils::dirs::check_core_permission(&current_core) {
+            Ok(has_permission) => Ok(has_permission),
+            Err(e) => {
+                log::error!(target: "app", "Failed to check core permission: {e:?}");
+                Ok(false)
+            }
+        }
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+    {
+        // Windows下通过服务模式或管理员权限处理
+        Ok(true)
+    }
+}
+
+/// 授予TUN模式权限
+#[tauri::command]
+#[specta::specta]
+pub async fn grant_tun_permission() -> Result<()> {
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    {
+        let current_core = Config::verge().data().clash_core.unwrap_or_default();
+        let current_core: nyanpasu_utils::core::CoreType = (&current_core).into();
+        
+        match crate::core::manager::grant_permission(&current_core) {
+            Ok(()) => {
+                log::info!(target: "app", "Successfully granted TUN permission to core");
+                Ok(())
+            }
+            Err(e) => {
+                log::error!(target: "app", "Failed to grant TUN permission: {e:?}");
+                Err(IpcError::Custom(format!("Failed to grant permission: {}", e)))
+            }
+        }
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+    {
+        // Windows下不需要此操作
+        Ok(())
+    }
+}
+
+/// 检查服务模式权限
+#[tauri::command]
+#[specta::specta]
+pub async fn check_service_permission() -> Result<bool> {
+    let service_state = crate::core::service::ipc::get_ipc_state();
+    if service_state.is_connected() {
+        return Ok(true);
+    }
+    
+    // 尝试查询服务状态来检查权限
+    match crate::core::service::control::status().await {
+        Ok(_) => Ok(true),
+        Err(e) => {
+            let error_msg = format!("{:?}", e);
+            if error_msg.contains("Permission denied") || error_msg.contains("os error 13") {
+                Ok(false)
+            } else {
+                // 其他错误（如服务未安装）不是权限问题
+                Ok(true)
+            }
+        }
+    }
+}
+
+/// 授予服务模式权限
+#[tauri::command]
+#[specta::specta]
+pub async fn grant_service_permission() -> Result<()> {
+    #[cfg(unix)]
+    {
+        use std::process::Command;
+        
+        // 尝试将用户添加到nyanpasu组
+        let current_user = std::env::var("USER").unwrap_or_else(|_| "unknown".to_string());
+        
+        let sudo = match Command::new("which").arg("pkexec").output() {
+            Ok(output) => {
+                if output.stdout.is_empty() {
+                    "sudo"
+                } else {
+                    "pkexec"
+                }
+            }
+            Err(_) => "sudo",
+        };
+        
+        let shell = format!("usermod -a -G nyanpasu {}", current_user);
+        let output = Command::new(sudo).arg("sh").arg("-c").arg(shell).output()?;
+        
+        if output.status.success() {
+            log::info!(target: "app", "Successfully added user to nyanpasu group");
+            Ok(())
+        } else {
+            let stderr = std::str::from_utf8(&output.stderr).unwrap_or("");
+            Err(IpcError::Custom(format!("Failed to grant service permission: {}", stderr)))
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        // Windows下服务权限通过其他方式处理
+        Ok(())
+    }
+}
+
+/// 检查系统代理权限
+#[tauri::command]
+#[specta::specta]
+pub async fn check_proxy_permission() -> Result<bool> {
+    use sysproxy::Sysproxy;
+    
+    // 尝试获取当前系统代理设置来测试权限
+    match Sysproxy::get_system_proxy() {
+        Ok(_) => Ok(true),
+        Err(e) => {
+            let error_msg = format!("{:?}", e);
+            if error_msg.contains("permission") || error_msg.contains("access") {
+                Ok(false)
+            } else {
+                Ok(true)
+            }
+        }
+    }
+}
+
+/// 授予系统代理权限
+#[tauri::command]
+#[specta::specta]
+pub async fn grant_proxy_permission() -> Result<()> {
+    // 系统代理权限通常需要管理员权限，这里提供说明
+    #[cfg(target_os = "macos")]
+    {
+        use std::process::Command;
+        
+        let script = r#"
+            tell application "System Events"
+                display dialog "Clash Nyanpasu needs permission to modify system proxy settings. Please grant permission in System Preferences > Security & Privacy > Privacy > Accessibility." buttons {"OK"} default button "OK"
+            end tell
+        "#;
+        
+        let _ = Command::new("osascript").arg("-e").arg(script).output();
+    }
+    
+    log::info!(target: "app", "System proxy permission guidance provided");
+    Ok(())
+}
+
+/// 检查自启动权限
+#[tauri::command]
+#[specta::specta]
+pub async fn check_autostart_permission() -> Result<bool> {
+    // 自启动权限检查相对简单，大多数情况下都有权限
+    Ok(true)
+}
+
+/// 授予自启动权限
+#[tauri::command]
+#[specta::specta]
+pub async fn grant_autostart_permission() -> Result<()> {
+    // 自启动权限通常不需要特殊授予
+    log::info!(target: "app", "Auto-start permission confirmed");
+    Ok(())
+}
+
 #[tauri::command]
 #[specta::specta]
 pub fn get_clash_logs() -> Result<VecDeque<String>> {

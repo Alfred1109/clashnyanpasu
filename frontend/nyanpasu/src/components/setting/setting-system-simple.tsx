@@ -1,0 +1,202 @@
+import { useLockFn } from 'ahooks'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { formatError } from '@/utils'
+import { message } from '@/utils/notification'
+import { List, ListItem, ListItemText } from '@mui/material'
+import Grid from '@mui/material/Grid'
+import {
+  toggleSystemProxy,
+  toggleTunMode,
+  useSetting,
+  useSystemService,
+} from '@nyanpasu/interface'
+import { BaseCard, SwitchItem } from '@nyanpasu/ui'
+import { PaperSwitchButton } from './modules/system-proxy'
+import { PermissionDialog } from './modules/permission-dialog'
+
+const SystemProxyButton = () => {
+  const { t } = useTranslation()
+  const [showPermissionDialog, setShowPermissionDialog] = useState(false)
+
+  const systemProxy = useSetting('enable_system_proxy')
+  const serviceMode = useSetting('enable_service_mode')
+
+  const handleSystemProxy = useLockFn(async () => {
+    // 如果要启用系统代理且不在服务模式下，先检查权限
+    if (!systemProxy.value && !serviceMode.value) {
+      setShowPermissionDialog(true)
+      return
+    }
+
+    try {
+      await toggleSystemProxy()
+    } catch (error) {
+      message(`Activation System Proxy failed!`, {
+        title: t('Error'),
+        kind: 'error',
+      })
+    }
+  })
+
+  const handlePermissionConfirm = useLockFn(async () => {
+    setShowPermissionDialog(false)
+    try {
+      await toggleSystemProxy()
+    } catch (error) {
+      message(`Activation System Proxy failed!`, {
+        title: t('Error'),
+        kind: 'error',
+      })
+    }
+  })
+
+  return (
+    <>
+      <PaperSwitchButton
+        label={t('System Proxy')}
+        checked={Boolean(systemProxy.value)}
+        onClick={handleSystemProxy}
+      />
+      <PermissionDialog
+        open={showPermissionDialog}
+        onClose={() => setShowPermissionDialog(false)}
+        onConfirm={handlePermissionConfirm}
+        permissionType="proxy"
+      />
+    </>
+  )
+}
+
+const TunModeButton = () => {
+  const { t } = useTranslation()
+  const [showPermissionDialog, setShowPermissionDialog] = useState(false)
+
+  const tunMode = useSetting('enable_tun_mode')
+  const serviceMode = useSetting('enable_service_mode')
+
+  const handleTunMode = useLockFn(async () => {
+    // 如果要启用TUN模式且不在服务模式下，先检查权限
+    if (!tunMode.value && !serviceMode.value) {
+      setShowPermissionDialog(true)
+      return
+    }
+
+    try {
+      await toggleTunMode()
+    } catch (error) {
+      message(`Activation TUN Mode failed! \n Error: ${formatError(error)}`, {
+        title: t('Error'),
+        kind: 'error',
+      })
+    }
+  })
+
+  const handlePermissionConfirm = useLockFn(async () => {
+    setShowPermissionDialog(false)
+    try {
+      await toggleTunMode()
+    } catch (error) {
+      message(`Activation TUN Mode failed! \n Error: ${formatError(error)}`, {
+        title: t('Error'),
+        kind: 'error',
+      })
+    }
+  })
+
+  return (
+    <>
+      <PaperSwitchButton
+        label={t('TUN Mode')}
+        checked={Boolean(tunMode.value)}
+        onClick={handleTunMode}
+      />
+      <PermissionDialog
+        open={showPermissionDialog}
+        onClose={() => setShowPermissionDialog(false)}
+        onConfirm={handlePermissionConfirm}
+        permissionType="tun"
+      />
+    </>
+  )
+}
+
+export const SettingSystemSimple = () => {
+  const { t } = useTranslation()
+  const { query } = useSystemService()
+  const serviceMode = useSetting('enable_service_mode')
+
+  const isServiceInstalled = query.data?.status !== 'not_installed'
+
+  const getStatusColor = () => {
+    switch (query.data?.status) {
+      case 'running':
+        return 'success.main'
+      case 'stopped':
+        return 'warning.main'
+      case 'not_installed':
+        return 'error.main'
+      default:
+        return 'text.secondary'
+    }
+  }
+
+  const getStatusText = () => {
+    if (!isServiceInstalled) {
+      return t('Not Installed')
+    }
+    return serviceMode.value
+      ? `${t('Service Mode')} - ${t(query.data?.status || 'unknown')}`
+      : t('Normal Mode')
+  }
+
+  return (
+    <BaseCard label={t('System Settings')}>
+      {/* 代理模式选择 */}
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 6 }}>
+          <SystemProxyButton />
+        </Grid>
+        <Grid size={{ xs: 6 }}>
+          <TunModeButton />
+        </Grid>
+      </Grid>
+
+      <List disablePadding sx={{ pt: 1 }}>
+        {/* 服务模式 */}
+        <SwitchItem
+          label={t('Service Mode')}
+          disabled={!isServiceInstalled}
+          checked={serviceMode.value || false}
+          onChange={() => serviceMode.upsert(!serviceMode.value)}
+        />
+
+        {/* 状态显示 */}
+        <ListItem sx={{ pl: 0, pr: 0 }}>
+          <ListItemText
+            primary={
+              <div className="flex items-center gap-2">
+                <span>{t('Status')}</span>
+                <span
+                  style={{ color: getStatusColor() }}
+                  className="text-sm font-medium"
+                >
+                  {getStatusText()}
+                </span>
+              </div>
+            }
+            secondary={
+              !isServiceInstalled
+                ? t('Install system service to enable service mode and avoid permission issues')
+                : serviceMode.value
+                  ? t('Running with elevated privileges')
+                  : t('Running in normal mode')
+            }
+          />
+        </ListItem>
+      </List>
+    </BaseCard>
+  )
+}
+
+export default SettingSystemSimple

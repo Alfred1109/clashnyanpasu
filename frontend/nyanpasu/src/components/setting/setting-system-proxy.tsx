@@ -10,6 +10,7 @@ import {
   toggleTunMode,
   useSetting,
   useSystemProxy,
+  useSystemService,
 } from '@nyanpasu/interface'
 import {
   BaseCard,
@@ -20,13 +21,37 @@ import {
   TextItem,
 } from '@nyanpasu/ui'
 import { PaperSwitchButton } from './modules/system-proxy'
+import {
+  PermissionDialog,
+  type PermissionType,
+} from './modules/permission-dialog'
 
 const TunModeButton = () => {
   const { t } = useTranslation()
+  const [showPermissionDialog, setShowPermissionDialog] = useState(false)
 
   const tunMode = useSetting('enable_tun_mode')
+  const serviceMode = useSetting('enable_service_mode')
 
   const handleTunMode = useLockFn(async () => {
+    // 如果要启用TUN模式且不在服务模式下，先检查权限
+    if (!tunMode.value && !serviceMode.value) {
+      setShowPermissionDialog(true)
+      return
+    }
+    
+    try {
+      await toggleTunMode()
+    } catch (error) {
+      message(`Activation TUN Mode failed! \n Error: ${formatError(error)}`, {
+        title: t('Error'),
+        kind: 'error',
+      })
+    }
+  })
+
+  const handlePermissionConfirm = useLockFn(async () => {
+    setShowPermissionDialog(false)
     try {
       await toggleTunMode()
     } catch (error) {
@@ -38,11 +63,19 @@ const TunModeButton = () => {
   })
 
   return (
-    <PaperSwitchButton
-      label={t('TUN Mode')}
-      checked={Boolean(tunMode.value)}
-      onClick={handleTunMode}
-    />
+    <>
+      <PaperSwitchButton
+        label={t('TUN Mode')}
+        checked={Boolean(tunMode.value)}
+        onClick={handleTunMode}
+      />
+      <PermissionDialog
+        open={showPermissionDialog}
+        onClose={() => setShowPermissionDialog(false)}
+        onConfirm={handlePermissionConfirm}
+        permissionType="tun"
+      />
+    </>
   )
 }
 
@@ -179,22 +212,78 @@ export const SettingSystemProxy = () => {
 
   const [expand, setExpand] = useState(false)
 
+  const { query } = useSystemService()
+  const serviceMode = useSetting('enable_service_mode')
+  const isServiceInstalled = query.data?.status !== 'not_installed'
+
+  const getStatusColor = () => {
+    switch (query.data?.status) {
+      case 'running':
+        return 'success.main'
+      case 'stopped':
+        return 'warning.main'
+      case 'not_installed':
+        return 'error.main'
+      default:
+        return 'text.secondary'
+    }
+  }
+
+  const getStatusText = () => {
+    if (!isServiceInstalled) {
+      return t('Not Installed')
+    }
+    return serviceMode.value
+      ? `${t('Service Mode')} - ${t(query.data?.status || 'unknown')}`
+      : t('Normal Mode')
+  }
+
   return (
     <BaseCard
-      label={t('System Setting')}
+      label={t('System Settings')}
       labelChildren={
         <ExpandMore expand={expand} onClick={() => setExpand(!expand)} />
       }
     >
       <Grid container spacing={2}>
         <Grid size={{ xs: 6 }}>
-          <TunModeButton />
+          <SystemProxyButton />
         </Grid>
 
         <Grid size={{ xs: 6 }}>
-          <SystemProxyButton />
+          <TunModeButton />
         </Grid>
       </Grid>
+
+      {/* 服务模式部分 */}
+      <List disablePadding sx={{ pt: 1 }}>
+        <SwitchItem
+          label={t('Service Mode')}
+          disabled={!isServiceInstalled}
+          checked={serviceMode.value || false}
+          onChange={() => serviceMode.upsert(!serviceMode.value)}
+        />
+        
+        <ListItem sx={{ pl: 0, pr: 0 }}>
+          <div className="text-base leading-10">{t('Status')}</div>
+          <div className="ml-auto">
+            <span
+              style={{ color: getStatusColor() }}
+              className="text-sm font-medium"
+            >
+              {getStatusText()}
+            </span>
+          </div>
+        </ListItem>
+        
+        {!isServiceInstalled && (
+          <ListItem sx={{ pl: 0, pr: 0 }}>
+            <div className="text-sm text-gray-500">
+              {t('Install system service to enable service mode and avoid permission issues')}
+            </div>
+          </ListItem>
+        )}
+      </List>
 
       <Expand open={expand}>
         <List disablePadding sx={{ pt: 1 }}>
