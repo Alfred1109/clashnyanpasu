@@ -203,7 +203,7 @@ pub async fn start_service() -> anyhow::Result<()> {
 
             #[cfg(not(all(unix, not(target_os = "macos"))))]
             let status = RunasCommand::new(SERVICE_PATH.as_path())
-                .args(["start"])
+                .args(&["start"])
                 .gui(true)
                 .show(true)
                 .status();
@@ -317,7 +317,7 @@ pub async fn restart_service() -> anyhow::Result<()> {
 
             #[cfg(not(all(unix, not(target_os = "macos"))))]
             let status = RunasCommand::new(SERVICE_PATH.as_path())
-                .args(["restart"])
+                .args(&["restart"])
                 .gui(true)
                 .show(true)
                 .status();
