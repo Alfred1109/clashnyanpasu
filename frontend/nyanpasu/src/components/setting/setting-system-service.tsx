@@ -30,6 +30,10 @@ export const SettingSystemService = () => {
       case 'not_installed': {
         return t('install')
       }
+
+      default: {
+        return t('install')
+      }
     }
   }
   const getControlButtonString = () => {
@@ -41,10 +45,16 @@ export const SettingSystemService = () => {
       case 'stopped': {
         return t('start')
       }
+
+      default: {
+        return ''
+      }
     }
   }
 
   const isDisabled = query.data?.status === 'not_installed'
+  const canControl = query.data?.status === 'running' || query.data?.status === 'stopped'
+  const isLoading = query.isLoading || query.isError || !query.data
 
   const promptDialog = useServerManualPromptDialog()
 
@@ -148,12 +158,12 @@ export const SettingSystemService = () => {
             })}
           />
           <div className="flex gap-2">
-            {!isDisabled && (
+            {canControl && (
               <Button
                 variant="contained"
                 onClick={handleControlClick}
                 loading={serviceControlPending}
-                disabled={installOrUninstallPending || serviceControlPending}
+                disabled={isLoading || installOrUninstallPending || serviceControlPending}
               >
                 {getControlButtonString()}
               </Button>
@@ -163,7 +173,7 @@ export const SettingSystemService = () => {
               variant="contained"
               onClick={handleInstallClick}
               loading={installOrUninstallPending}
-              disabled={installOrUninstallPending || serviceControlPending}
+              disabled={isLoading || installOrUninstallPending || serviceControlPending}
             >
               {getInstallButtonString()}
             </Button>
