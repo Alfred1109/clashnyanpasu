@@ -18,7 +18,11 @@ export const MuiSwitch: Components<Theme>['MuiSwitch'] = {
         opacity: 0,
       },
 
-      '&:has(.Mui-disabled) .MuiSwitch-track': {
+      '& .MuiSwitch-track': {
+        cursor: 'pointer',
+      },
+
+      '& .MuiSwitch-switchBase.Mui-disabled + .MuiSwitch-track': {
         opacity: '0.5 !important',
         cursor: 'not-allowed',
       },

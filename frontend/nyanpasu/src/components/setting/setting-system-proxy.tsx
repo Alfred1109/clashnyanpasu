@@ -3,7 +3,17 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatError } from '@/utils'
 import { message } from '@/utils/notification'
-import { InputAdornment, List, ListItem } from '@mui/material'
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  InputAdornment,
+  List,
+  ListItem,
+} from '@mui/material'
 import Grid from '@mui/material/Grid'
 import {
   toggleSystemProxy,
@@ -20,11 +30,8 @@ import {
   SwitchItem,
   TextItem,
 } from '@nyanpasu/ui'
+import { PermissionDialog } from './modules/permission-dialog'
 import { PaperSwitchButton } from './modules/system-proxy'
-import {
-  PermissionDialog,
-  type PermissionType,
-} from './modules/permission-dialog'
 
 const TunModeButton = () => {
   const { t } = useTranslation()
@@ -39,7 +46,7 @@ const TunModeButton = () => {
       setShowPermissionDialog(true)
       return
     }
-    
+
     try {
       await toggleTunMode()
     } catch (error) {
@@ -189,7 +196,7 @@ const CurrentSystemProxy = () => {
 
   return (
     <ListItem
-      className="!w-full !flex-col !items-start select-text"
+      className="w-full! flex-col! items-start! select-text"
       sx={{ pl: 0, pr: 0 }}
     >
       <div className="text-base leading-10">{t('Current System Proxy')}</div>
@@ -212,9 +219,10 @@ export const SettingSystemProxy = () => {
 
   const [expand, setExpand] = useState(false)
 
-  const { query } = useSystemService()
+  const { query, upsert: serviceUpsert } = useSystemService()
   const serviceMode = useSetting('enable_service_mode')
   const isServiceInstalled = query.data?.status !== 'not_installed'
+  const [showInstallDialog, setShowInstallDialog] = useState(false)
 
   const getStatusColor = () => {
     switch (query.data?.status) {
@@ -238,6 +246,38 @@ export const SettingSystemProxy = () => {
       : t('Normal Mode')
   }
 
+  const handleServiceModeToggle = useLockFn(async () => {
+    if (!serviceMode.value && !isServiceInstalled) {
+      setShowInstallDialog(true)
+      return
+    }
+
+    try {
+      await serviceMode.upsert(!serviceMode.value)
+    } catch (error) {
+      message(`Service Mode toggle failed! \n Error: ${formatError(error)}`, {
+        title: t('Error'),
+        kind: 'error',
+      })
+    }
+  })
+
+  const handleInstallConfirm = useLockFn(async () => {
+    setShowInstallDialog(false)
+    try {
+      await serviceUpsert.mutateAsync('install')
+      await serviceMode.upsert(true)
+    } catch (error) {
+      message(
+        `${t('Failed to install system service')}\n${formatError(error)}`,
+        {
+          title: t('Error'),
+          kind: 'error',
+        },
+      )
+    }
+  })
+
   return (
     <BaseCard
       label={t('System Settings')}
@@ -259,11 +299,11 @@ export const SettingSystemProxy = () => {
       <List disablePadding sx={{ pt: 1 }}>
         <SwitchItem
           label={t('Service Mode')}
-          disabled={!isServiceInstalled}
+          disabled={false}
           checked={serviceMode.value || false}
-          onChange={() => serviceMode.upsert(!serviceMode.value)}
+          onChange={handleServiceModeToggle}
         />
-        
+
         <ListItem sx={{ pl: 0, pr: 0 }}>
           <div className="text-base leading-10">{t('Status')}</div>
           <div className="ml-auto">
@@ -275,15 +315,41 @@ export const SettingSystemProxy = () => {
             </span>
           </div>
         </ListItem>
-        
+
         {!isServiceInstalled && (
           <ListItem sx={{ pl: 0, pr: 0 }}>
             <div className="text-sm text-gray-500">
-              {t('Install system service to enable service mode and avoid permission issues')}
+              {t(
+                'Install system service to enable service mode and avoid permission issues',
+              )}
             </div>
           </ListItem>
         )}
       </List>
+
+      <Dialog
+        open={showInstallDialog}
+        onClose={() => setShowInstallDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{t('Install system service')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t(
+              'The system service is not installed. Do you want to install it now to enable service mode?',
+            )}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowInstallDialog(false)}>
+            {t('Cancel')}
+          </Button>
+          <Button onClick={handleInstallConfirm} variant="contained">
+            {t('Install')}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Expand open={expand}>
         <List disablePadding sx={{ pt: 1 }}>
