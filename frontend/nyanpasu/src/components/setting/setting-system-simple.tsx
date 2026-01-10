@@ -22,8 +22,8 @@ import {
   useSystemService,
 } from '@nyanpasu/interface'
 import { BaseCard, SwitchItem } from '@nyanpasu/ui'
-import { PaperSwitchButton } from './modules/system-proxy'
 import { PermissionDialog } from './modules/permission-dialog'
+import { PaperSwitchButton } from './modules/system-proxy'
 
 const SystemProxyButton = () => {
   const { t } = useTranslation()
@@ -159,12 +159,16 @@ export const SettingSystemSimple = () => {
     setShowInstallDialog(false)
     try {
       await serviceUpsert.mutateAsync('install')
+      await serviceUpsert.mutateAsync('start')
       await serviceMode.upsert(true)
     } catch (error) {
-      message(`${t('Failed to install system service')}\n${formatError(error)}`, {
-        title: t('Error'),
-        kind: 'error',
-      })
+      message(
+        `${t('Failed to install system service')}\n${formatError(error)}`,
+        {
+          title: t('Error'),
+          kind: 'error',
+        },
+      )
     }
   })
 
@@ -227,7 +231,9 @@ export const SettingSystemSimple = () => {
             }
             secondary={
               !isServiceInstalled
-                ? t('Install system service to enable service mode and avoid permission issues')
+                ? t(
+                    'Install system service to enable service mode and avoid permission issues',
+                  )
                 : serviceMode.value
                   ? t('Running with elevated privileges')
                   : t('Running in normal mode')

@@ -126,8 +126,19 @@ export const SettingSystemService = () => {
         await restartSidecar()
 
         if (installAction === 'enable_service_mode') {
-          await serviceMode.upsert(true)
-          return
+          try {
+            await upsert.mutateAsync('start')
+            await restartSidecar()
+            await serviceMode.upsert(true)
+            return
+          } catch (e) {
+            message(`Start failed: ${formatError(e)}`, {
+              kind: 'error',
+              title: t('Error'),
+            })
+            promptDialog.show('start')
+            return
+          }
         }
 
         try {

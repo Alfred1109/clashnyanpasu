@@ -170,6 +170,7 @@ const ServiceModeSection = () => {
     setShowInstallDialog(false)
     try {
       await serviceUpsert.mutateAsync('install')
+      await serviceUpsert.mutateAsync('start')
       await serviceMode.upsert(true)
     } catch (error) {
       message(
