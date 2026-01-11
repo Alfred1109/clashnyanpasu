@@ -13,7 +13,7 @@ use boa_engine::{
     module::ModuleLoader,
 };
 use boa_parser::Source;
-use futures::{stream::StreamExt, stream::FuturesUnordered};
+use futures::stream::{FuturesUnordered, StreamExt};
 use mime::Mime;
 use smol::{LocalExecutor, future};
 // Tokio sync is not runtime related
