@@ -1,0 +1,36 @@
+# Cargo 构建优化配置 - 充分利用 i7-13700KF 的 24 线程
+[build]
+# 使用更多并行任务 - 针对24线程CPU优化
+jobs = 20
+
+[net]
+# 并行下载依赖
+git-fetch-with-cli = true
+
+[registries.crates-io]
+protocol = "sparse"
+
+# 针对不同构建类型的优化
+[profile.dev]
+# 开发构建优化
+opt-level = 1
+debug = true
+split-debuginfo = 'unpacked'
+incremental = true
+# 使用更多 codegen units 提升并行编译
+codegen-units = 256
+
+[profile.release]
+# 发布构建优化 - 在速度和大小间平衡
+codegen-units = 16  # 从 1 增加到 16 提升并行度
+lto = "thin"        # 使用 thin LTO 而非 full LTO，更快
+opt-level = "z"     # 优化大小
+panic = "abort"     # 稍微减少二进制大小
+strip = true        # 移除调试符号
+
+[target.x86_64-pc-windows-msvc]
+# Windows 特定优化
+rustflags = [
+    "-C", "target-cpu=native",        # 使用本机CPU指令集
+    "-C", "link-arg=/INCREMENTAL:NO", # 禁用增量链接提升性能
+]

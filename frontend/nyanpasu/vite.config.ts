@@ -135,9 +135,19 @@ export default defineConfig(({ command, mode }) => {
     },
     build: {
       outDir: '../../backend/tauri/tmp/dist',
+      // 多线程构建优化 - 利用24线程CPU
+      target: 'es2022',
+      minify: 'esbuild', // 使用更快的esbuild压缩
+      cssMinify: 'esbuild',
       rollupOptions: {
+        // 并行处理优化
+        maxParallelFileOps: 20,
         output: {
           manualChunks: {
+            // 更激进的代码分割提升并行构建
+            vendor: ['react', 'react-dom', 'react-router-dom'],
+            mui: ['@mui/material', '@mui/icons-material', '@mui/lab'],
+            utils: ['lodash-es', 'dayjs', 'ahooks'],
             jsonWorker: [`monaco-editor/esm/vs/language/json/json.worker`],
             tsWorker: [`monaco-editor/esm/vs/language/typescript/ts.worker`],
             editorWorker: [`monaco-editor/esm/vs/editor/editor.worker`],
@@ -147,6 +157,8 @@ export default defineConfig(({ command, mode }) => {
       },
       emptyOutDir: true,
       sourcemap: isDev || IS_NIGHTLY ? 'inline' : false,
+      // 增大chunk警告阈值，避免不必要的警告
+      chunkSizeWarningLimit: 1000,
     },
     define: {
       OS_PLATFORM: `"${process.platform}"`,
