@@ -2,7 +2,7 @@ import { useAsyncEffect } from 'ahooks'
 import { useAtom, useSetAtom } from 'jotai'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import useSWR from 'swr'
+import { useQuery } from '@tanstack/react-query'
 import { OS } from '@/consts'
 import { serviceManualPromptDialogAtom } from '@/store/service'
 import { notification } from '@/utils/notification'
@@ -61,11 +61,15 @@ export default function ServerManualPromptDialog({
 }: ServerManualPromptDialogProps) {
   const { t } = useTranslation()
   const { mode } = useColorScheme()
-  const { data: serviceInstallPrompt, error } = useSWR(
-    operation === 'install' ? '/service_install_prompt' : null,
-    getServiceInstallPrompt,
-  )
-  const { data: coreDir } = useSWR('/core_dir', () => getCoreDir())
+  const { data: serviceInstallPrompt, error } = useQuery({
+    queryKey: ['/service_install_prompt'],
+    queryFn: getServiceInstallPrompt,
+    enabled: operation === 'install',
+  })
+  const { data: coreDir } = useQuery({
+    queryKey: ['/core_dir'],
+    queryFn: getCoreDir,
+  })
   const commands = useMemo(() => {
     if (operation === 'install' && serviceInstallPrompt) {
       return `cd "${coreDir}"\n${serviceInstallPrompt}`

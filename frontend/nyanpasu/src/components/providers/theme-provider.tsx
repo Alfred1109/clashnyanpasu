@@ -15,7 +15,7 @@ import {
 } from '@material/material-color-utilities'
 import { useSetting } from '@nyanpasu/interface'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { useLocalStorage } from '@uidotdev/usehooks'
+import { useLocalStorageState } from 'ahooks'
 
 const appWindow = getCurrentWebviewWindow()
 
@@ -103,18 +103,21 @@ export function ExperimentalThemeProvider({ children }: PropsWithChildren) {
 
   const themeColor = useSetting('theme_color')
 
-  const [cachedThemePalette, setCachedThemePalette] = useLocalStorage<Theme>(
+  const [cachedThemePalette, setCachedThemePalette] = useLocalStorageState<Theme>(
     THEME_PALETTE_KEY,
-    themeFromSourceColor(
-      // use default color if theme color is not set
-      argbFromHex(themeColor.value || DEFAULT_COLOR),
-    ),
+    {
+      defaultValue: themeFromSourceColor(
+        // use default color if theme color is not set
+        argbFromHex(themeColor.value || DEFAULT_COLOR),
+      ),
+    }
   )
 
-  const [cachedThemeCssVars, setCachedThemeCssVars] = useLocalStorage<string>(
+  const [cachedThemeCssVars, setCachedThemeCssVars] = useLocalStorageState<string>(
     THEME_CSS_VARS_KEY,
-    // initialize theme css vars from cached theme palette
-    generateThemeCssVars(cachedThemePalette),
+    {
+      defaultValue: cachedThemePalette ? generateThemeCssVars(cachedThemePalette) : '',
+    }
   )
 
   // automatically insert custom theme css vars into document head

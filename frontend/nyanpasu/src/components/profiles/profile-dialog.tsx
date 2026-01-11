@@ -1,6 +1,6 @@
 import { version } from '~/package.json'
-import { useAsyncEffect } from 'ahooks'
-import { type editor } from 'monaco-editor'
+import { useAsyncEffect, useLockFn, useLatest } from 'ahooks'
+import type { editor } from 'monaco-editor'
 import {
   createContext,
   lazy,
@@ -18,7 +18,6 @@ import {
   useForm,
 } from 'react-hook-form-mui'
 import { useTranslation } from 'react-i18next'
-import { useLatest } from 'react-use'
 import { formatError } from '@/utils'
 import { message } from '@/utils/notification'
 import { Divider, InputAdornment } from '@mui/material'

@@ -1611,7 +1611,6 @@ dependencies = [
  "indexmap 2.12.1",
  "itertools 0.14.0",
  "log",
- "md-5",
  "mime",
  "mlua",
  "nanoid",
@@ -1650,7 +1649,6 @@ dependencies = [
  "rust-i18n",
  "rustc-hash 2.1.1",
  "rustc_version",
- "seahash",
  "semver 1.0.27",
  "serde",
  "serde_json",
@@ -5276,16 +5274,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "md-5"
-version = "0.10.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d89e7ee0cfbedfc4da3340218492196241d89eefb6dab27de5df917a6d2e78cf"
-dependencies = [
- "cfg-if",
- "digest 0.10.7",
-]
-
-[[package]]
 name = "memchr"
 version = "2.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8241,12 +8229,6 @@ dependencies = [
  "smithay-client-toolkit 0.19.2",
  "tiny-skia",
 ]
-
-[[package]]
-name = "seahash"
-version = "4.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b"
 
 [[package]]
 name = "security-framework-sys"

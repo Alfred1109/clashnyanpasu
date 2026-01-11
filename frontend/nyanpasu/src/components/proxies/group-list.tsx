@@ -1,6 +1,6 @@
 import { useAtom, useAtomValue } from 'jotai'
 import { memo, RefObject, useDeferredValue, useMemo } from 'react'
-import useSWR from 'swr'
+import { useQuery } from '@tanstack/react-query'
 import { Virtualizer } from 'virtua'
 import { proxyGroupAtom } from '@/store'
 import { proxiesFilterAtom } from '@/store/proxies'
@@ -19,7 +19,10 @@ const IconRender = memo(function IconRender({ icon }: { icon: string }) {
     data: serverPort,
     isLoading,
     error,
-  } = useSWR('/getServerPort', getServerPort)
+  } = useQuery({
+    queryKey: ['/getServerPort'],
+    queryFn: getServerPort,
+  })
   const src = icon.trim().startsWith('<svg')
     ? `data:image/svg+xml;base64,${btoa(icon)}`
     : icon

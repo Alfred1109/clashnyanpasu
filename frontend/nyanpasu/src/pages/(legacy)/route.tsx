@@ -16,7 +16,7 @@ import 'dayjs/locale/zh-cn'
 import 'dayjs/locale/zh-tw'
 import { useAtom, useSetAtom } from 'jotai'
 import { PropsWithChildren, useEffect } from 'react'
-import { SWRConfig } from 'swr'
+// SWR removed - now using React Query globally
 
 export const Route = createFileRoute('/(legacy)')({
   component: Layout,
@@ -52,27 +52,18 @@ function Layout() {
   }, [breakpoint, setIsDrawer])
 
   return (
-    <SWRConfig
-      value={{
-        errorRetryCount: 5,
-        revalidateOnMount: true,
-        revalidateOnFocus: true,
-        refreshInterval: 5000,
-      }}
-    >
-      <QueryLoaderProvider>
-        <LocalesProvider />
-        <MutationProvider />
-        <NoticeProvider />
-        <SchemeProvider />
-        {/* <UpdaterDialog /> */}
-        {/* <UpdaterProvider /> */}
-        <AppContainer isDrawer={isDrawer}>
-          <PageTransition
-            className={cn('absolute inset-4 top-10', !isDrawer && 'left-0')}
-          />
-        </AppContainer>
-      </QueryLoaderProvider>
-    </SWRConfig>
+    <QueryLoaderProvider>
+      <LocalesProvider />
+      <MutationProvider />
+      <NoticeProvider />
+      <SchemeProvider />
+      {/* <UpdaterDialog /> */}
+      {/* <UpdaterProvider /> */}
+      <AppContainer isDrawer={isDrawer}>
+        <PageTransition
+          className={cn('absolute inset-4 top-10', !isDrawer && 'left-0')}
+        />
+      </AppContainer>
+    </QueryLoaderProvider>
   )
 }

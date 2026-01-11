@@ -1,16 +1,18 @@
 import { useCallback } from 'react'
-import { cache, mutate } from 'swr/_internal'
+import { useQueryClient } from '@tanstack/react-query'
 
 export const useGlobalMutation = () => {
-  return useCallback((swrKey, ...args) => {
-    const matcher = typeof swrKey === 'function' ? swrKey : undefined
+  const queryClient = useQueryClient()
+  
+  return useCallback((queryKey: any, ...args: any[]) => {
+    const matcher = typeof queryKey === 'function' ? queryKey : undefined
 
     if (matcher) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const keys = Array.from(cache.keys()).filter(matcher as any)
-      keys.forEach((key) => mutate(key, ...args))
+      // Invalidate queries matching the predicate function
+      queryClient.invalidateQueries({ predicate: matcher })
     } else {
-      mutate(swrKey, ...args)
+      // Invalidate specific query by key
+      queryClient.invalidateQueries({ queryKey })
     }
-  }, []) as typeof mutate
+  }, [queryClient])
 }

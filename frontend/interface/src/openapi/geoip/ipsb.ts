@@ -1,4 +1,4 @@
-import useSWR, { SWRConfiguration } from 'swr'
+import { useQuery, UseQueryOptions } from '@tanstack/react-query'
 import { getIpsbASN } from '@/service'
 
 export interface IPSBResponse {
@@ -16,6 +16,10 @@ export interface IPSBResponse {
   country_code: string
 }
 
-export const useIPSB = (config?: SWRConfiguration) => {
-  return useSWR('https://api.ip.sb/geoip', () => getIpsbASN(), config)
+export const useIPSB = (config?: Partial<UseQueryOptions<IPSBResponse>>) => {
+  return useQuery<IPSBResponse>({
+    queryKey: ['https://api.ip.sb/geoip'],
+    queryFn: () => getIpsbASN(),
+    ...config,
+  })
 }

@@ -3,7 +3,7 @@ import { useAtomValue } from 'jotai'
 import { isObject } from 'lodash-es'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import useSWR from 'swr'
+import { useQuery } from '@tanstack/react-query'
 import { atomIsDrawer } from '@/store'
 import { Box, CircularProgress, Paper, Tooltip } from '@mui/material'
 import Grid from '@mui/material/Grid'
@@ -25,10 +25,11 @@ export const ServiceShortcuts = () => {
     query: { data: serviceStatus },
   } = useSystemService()
 
-  // TODO: refactor to use tanstack query
-  const coreStatusSWR = useSWR('/coreStatus', getCoreStatus, {
-    refreshInterval: 2000,
-    revalidateOnFocus: false,
+  const coreStatusSWR = useQuery({
+    queryKey: ['/coreStatus'],
+    queryFn: getCoreStatus,
+    refetchInterval: 2000,
+    refetchOnWindowFocus: false,
   })
 
   const status: Status = useMemo(() => {

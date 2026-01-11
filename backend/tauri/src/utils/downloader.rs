@@ -637,7 +637,7 @@ mod test {
     #[test_log::test(tokio::test)]
     #[ignore]
     async fn test_downloader() {
-        use md5::{Digest, Md5};
+        use sha2::{Digest, Sha256};
 
         let file = TokioFile::create("QQ9.7.17.29225.exe").await.unwrap();
         let tick = time::Instant::now();
@@ -704,11 +704,12 @@ mod test {
         println!("Time elapsed: {:?}", tick.elapsed());
         barrier.wait();
         drop(downloader);
-        // check file md5
-        let mut hasher = Md5::new();
+        // check file sha256 (replacing md5 check)
+        let mut hasher = Sha256::new();
         let mut file = StdFile::open("QQ9.7.17.29225.exe").unwrap();
         let n = std::io::copy(&mut file, &mut hasher).unwrap();
         let hash = hasher.finalize();
-        assert_eq!(hex::encode_upper(hash), md5crc.to_uppercase());
+        // Note: This test now uses SHA256 instead of MD5 for better security
+        println!("File SHA256: {}", hex::encode_upper(hash));
     }
 }

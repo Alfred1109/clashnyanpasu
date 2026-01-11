@@ -1,6 +1,5 @@
-import { useAsyncEffect } from 'ahooks'
+import { useAsyncEffect, useSize } from 'ahooks'
 import { useEffect, useState } from 'react'
-import { createBreakpoint } from 'react-use'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { MUI_BREAKPOINTS } from '../materialYou/themeConsts.mjs'
 
@@ -8,9 +7,20 @@ export type Breakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 
 const breakpointsOrder: Breakpoint[] = ['xs', 'sm', 'md', 'lg', 'xl']
 
-export const useBreakpoint = createBreakpoint(
-  MUI_BREAKPOINTS.values,
-) as () => Breakpoint
+export const useBreakpoint = (): Breakpoint => {
+  const size = useSize(document.documentElement)
+  const width = size?.width || 0
+  
+  const breakpoints = MUI_BREAKPOINTS.values
+  
+  if (!breakpoints) return 'xs'
+  
+  if (width >= breakpoints.xl) return 'xl'
+  if (width >= breakpoints.lg) return 'lg'
+  if (width >= breakpoints.md) return 'md'
+  if (width >= breakpoints.sm) return 'sm'
+  return 'xs'
+}
 
 type BreakpointEffectCallback = (currentBreakpoint: Breakpoint) => void
 

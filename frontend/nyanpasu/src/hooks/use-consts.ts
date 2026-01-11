@@ -1,15 +1,13 @@
-import useSWR, { SWRConfiguration } from 'swr'
+import { useQuery, UseQueryOptions } from '@tanstack/react-query'
 import { isAppImage } from '@nyanpasu/interface'
 
-export const useIsAppImage = (config?: Partial<SWRConfiguration>) => {
-  return useSWR<boolean>(
-    ['/api/is_appimage'],
-    async () => (await isAppImage()) ?? false,
-    {
-      ...(config || {}),
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      refreshInterval: 0,
-    },
-  )
+export const useIsAppImage = (config?: Partial<UseQueryOptions<boolean>>) => {
+  return useQuery<boolean>({
+    queryKey: ['/api/is_appimage'],
+    queryFn: async () => (await isAppImage()) ?? false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchInterval: false,
+    ...config,
+  })
 }

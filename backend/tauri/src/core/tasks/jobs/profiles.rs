@@ -9,7 +9,8 @@ use crate::{
 use anyhow::Result;
 use async_trait::async_trait;
 use parking_lot::RwLock;
-use std::{collections::HashMap, ops::Deref, sync::Arc, time::Duration};
+use rustc_hash::FxHasher;
+use std::{collections::HashMap, hash::Hasher, ops::Deref, sync::Arc, time::Duration};
 
 const INITIAL_TASK_ID: TaskID = 10000000; // 留一个初始的 TaskID，避免和其他任务的 ID 冲突
 
@@ -193,7 +194,9 @@ fn gen_map() -> HashMap<ProfileUID, Minutes> {
 
 /// get_task_id Get a u64 task id by profile uid
 fn get_task_id(uid: &str) -> TaskID {
-    let task_id = seahash::hash(uid.as_bytes());
+    let mut hasher = FxHasher::default();
+    hasher.write(uid.as_bytes());
+    let task_id = hasher.finish();
     if task_id < INITIAL_TASK_ID {
         INITIAL_TASK_ID + task_id
     } else {

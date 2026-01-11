@@ -1,5 +1,5 @@
 import { useAtomValue } from 'jotai'
-import { useWindowSize } from 'react-use'
+import { useSize } from 'ahooks'
 import { useIsAppImage } from '@/hooks/use-consts'
 import { atomIsDrawerOnlyIcon } from '@/store'
 import Masonry from '@mui/lab/Masonry'
@@ -22,7 +22,8 @@ export const SettingPage = () => {
 
   const isDrawerOnlyIcon = useAtomValue(atomIsDrawerOnlyIcon)
 
-  const { width } = useWindowSize()
+  const size = useSize(document.documentElement)
+  const width = size?.width || 0
 
   return (
     <Masonry

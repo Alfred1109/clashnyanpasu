@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useAtom } from 'jotai'
 import { useMemo, useState, useTransition } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useWindowSize } from 'react-use'
+import { useSize } from 'ahooks'
 import { z } from 'zod'
 import {
   atomChainsSelected,
@@ -134,7 +134,8 @@ function ProfilePage() {
 
   const hasSide = globalChain || chainsSelected
 
-  const { width } = useWindowSize()
+  const size = useSize(document.documentElement)
+  const width = size?.width || 0
 
   const [globalUpdatePending, startGlobalUpdate] = useTransition()
   const handleGlobalProfileUpdate = useLockFn(async () => {
