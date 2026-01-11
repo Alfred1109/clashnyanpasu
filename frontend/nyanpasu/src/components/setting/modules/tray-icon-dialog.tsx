@@ -50,7 +50,7 @@ function TrayIconItem({ mode }: { mode: 'system_proxy' | 'tun' | 'normal' }) {
         if (selected === null) {
           return
         }
-        return await setTrayIconCall(mode, selected)
+        await setTrayIconCall(mode, selected)
       } catch (e) {
         message(formatError(e), {
           kind: 'error',

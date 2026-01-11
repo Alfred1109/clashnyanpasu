@@ -64,7 +64,7 @@ export const notification = async ({
   }
   if (portable === null) {
     try {
-      portable = await isPortable()
+      portable = (await isPortable()) ?? false
     } catch {
       portable = true
     }

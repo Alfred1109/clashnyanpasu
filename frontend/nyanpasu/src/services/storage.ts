@@ -24,14 +24,15 @@ export function dispatchStorageValueChanged(
 }
 
 export const NyanpasuStorage = {
-  getItem(key) {
-    return getStorageItem(key)
+  async getItem(key) {
+    const value = await getStorageItem(key)
+    return value ?? null
   },
-  setItem(key, newValue) {
-    return setStorageItem(key, newValue)
+  async setItem(key, newValue) {
+    await setStorageItem(key, newValue)
   },
-  removeItem(key) {
-    return removeStorageItem(key)
+  async removeItem(key) {
+    await removeStorageItem(key)
   },
   subscribe(key, callback) {
     if (!subscribers.has(key)) {
@@ -51,4 +52,5 @@ export const NyanpasuStorage = {
   },
 } satisfies AsyncStringStorage
 
-export const NyanpasuJSONStorage = createJSONStorage(() => NyanpasuStorage)
+export const createNyanpasuJSONStorage = <T>() =>
+  createJSONStorage<T>(() => NyanpasuStorage)

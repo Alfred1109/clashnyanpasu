@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatError } from '@/utils'
+import { message } from '@/utils/notification'
 import { ClearRounded, ContentCopyRounded, Download } from '@mui/icons-material'
 import {
   CircularProgress,
@@ -25,7 +27,7 @@ export const QuickImport = () => {
     const text = await readText()
 
     if (text) {
-      setUrl(text)
+      setUrl(text.trim())
     }
   }
 
@@ -62,18 +64,32 @@ export const QuickImport = () => {
   }
 
   const handleImport = async () => {
+    const normalizedUrl = url.trim()
+    if (!normalizedUrl) return
+
     try {
       setLoading(true)
 
       await create.mutateAsync({
         type: 'url',
         data: {
-          url,
-          option: null,
+          url: normalizedUrl,
+          option: {
+            user_agent: null,
+            with_proxy: null,
+            self_proxy: null,
+            update_interval: null,
+          },
         },
       })
-    } finally {
+
       setUrl('')
+    } catch (error) {
+      message(`${t('Error')}: ${formatError(error)}`, {
+        title: t('Error'),
+        kind: 'error',
+      })
+    } finally {
       setLoading(false)
     }
   }
@@ -99,7 +115,9 @@ export const QuickImport = () => {
       value={url}
       placeholder={t('Profile URL')}
       onChange={(e) => setUrl(e.target.value)}
-      onKeyDown={(e) => url !== '' && e.key === 'Enter' && handleImport()}
+      onKeyDown={(e) =>
+        url.trim() !== '' && e.key === 'Enter' && handleImport()
+      }
       sx={{ input: { py: 1, px: 2 } }}
       slotProps={{
         input: inputProps,

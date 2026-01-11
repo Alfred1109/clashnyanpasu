@@ -1,8 +1,8 @@
 import { atom } from 'jotai'
-import { atomWithStorage, createJSONStorage } from 'jotai/utils'
+import { atomWithStorage } from 'jotai/utils'
 import { SortType } from '@/components/proxies/utils'
 import { FileRouteTypes } from '@/route-tree.gen'
-import { NyanpasuStorage } from '@/services/storage'
+import { createNyanpasuJSONStorage } from '@/services/storage'
 
 const atomWithLocalStorage = <T>(key: string, initialValue: T) => {
   const getInitialValue = (): T => {
@@ -93,7 +93,7 @@ export const connectionTableColumnsAtom = atomWithStorage<
     'destination_asn',
     'type',
   ].map((key) => [key, true]),
-  createJSONStorage(() => NyanpasuStorage),
+  createNyanpasuJSONStorage<Array<[string, boolean]>>(),
 )
 
 // export const themeSchemeAtom = atom<MDYTheme["schemes"] | null>(null);

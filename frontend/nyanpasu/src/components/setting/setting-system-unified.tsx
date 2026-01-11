@@ -147,6 +147,8 @@ const ServiceModeSection = () => {
   const { query, upsert: serviceUpsert } = useSystemService()
   const serviceMode = useSetting('enable_service_mode')
   const [showInstallDialog, setShowInstallDialog] = useState(false)
+  const [showUninstallDialog, setShowUninstallDialog] = useState(false)
+  const [serviceActionPending, setServiceActionPending] = useState(false)
 
   const isServiceInstalled = query.data?.status !== 'not_installed'
 
@@ -157,12 +159,28 @@ const ServiceModeSection = () => {
     }
 
     try {
-      await serviceMode.upsert(!serviceMode.value)
+      setServiceActionPending(true)
+
+      if (!serviceMode.value) {
+        const status = query.data?.status
+        if (isServiceInstalled && status === 'stopped') {
+          await serviceUpsert.mutateAsync('start')
+        }
+        await serviceMode.upsert(true)
+      } else {
+        const status = query.data?.status
+        if (isServiceInstalled && status === 'running') {
+          await serviceUpsert.mutateAsync('stop')
+        }
+        await serviceMode.upsert(false)
+      }
     } catch (error) {
       message(`Service Mode toggle failed!`, {
         title: t('Error'),
         kind: 'error',
       })
+    } finally {
+      setServiceActionPending(false)
     }
   })
 
@@ -183,6 +201,31 @@ const ServiceModeSection = () => {
     }
   })
 
+  const handleUninstallConfirm = useLockFn(async () => {
+    setShowUninstallDialog(false)
+    try {
+      setServiceActionPending(true)
+
+      const status = query.data?.status
+      if (isServiceInstalled && status === 'running') {
+        await serviceUpsert.mutateAsync('stop')
+      }
+
+      if (serviceMode.value) {
+        await serviceMode.upsert(false)
+      }
+
+      await serviceUpsert.mutateAsync('uninstall')
+    } catch (error) {
+      message(`${t('Error')}: ${formatError(error)}`, {
+        title: t('Error'),
+        kind: 'error',
+      })
+    } finally {
+      setServiceActionPending(false)
+    }
+  })
+
   const getStatusColor = () => {
     switch (query.data?.status) {
       case 'running':
@@ -200,7 +243,7 @@ const ServiceModeSection = () => {
     <>
       <SwitchItem
         label={t('Service Mode')}
-        disabled={false}
+        disabled={serviceActionPending || query.isLoading}
         checked={serviceMode.value || false}
         onChange={handleServiceModeToggle}
       />
@@ -236,6 +279,24 @@ const ServiceModeSection = () => {
         </ListItem>
       )}
 
+      {isServiceInstalled &&
+        !serviceMode.value &&
+        query.data?.status === 'stopped' && (
+          <ListItem sx={{ pl: 0, pr: 0 }}>
+            <div className="ml-auto">
+              <Button
+                size="small"
+                variant="outlined"
+                color="error"
+                onClick={() => setShowUninstallDialog(true)}
+                disabled={serviceActionPending || query.isLoading}
+              >
+                {t('uninstall')}
+              </Button>
+            </div>
+          </ListItem>
+        )}
+
       <Dialog
         open={showInstallDialog}
         onClose={() => setShowInstallDialog(false)}
@@ -256,6 +317,35 @@ const ServiceModeSection = () => {
           </Button>
           <Button onClick={handleInstallConfirm} variant="contained">
             {t('Install')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={showUninstallDialog}
+        onClose={() => setShowUninstallDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{t('uninstall')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t(
+              'Are you sure you want to uninstall the system service? This will disable service mode.',
+            )}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowUninstallDialog(false)}>
+            {t('Cancel')}
+          </Button>
+          <Button
+            onClick={handleUninstallConfirm}
+            variant="contained"
+            color="error"
+            disabled={serviceActionPending || query.isLoading}
+          >
+            {t('uninstall')}
           </Button>
         </DialogActions>
       </Dialog>

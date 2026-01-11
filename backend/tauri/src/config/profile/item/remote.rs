@@ -120,10 +120,12 @@ async fn subscribe_url(
     options: &RemoteProfileOptions,
 ) -> Result<Subscription, SubscribeError> {
     let options = options.apply_default();
-    let mut builder = reqwest::ClientBuilder::new()
-        .use_rustls_tls()
-        .no_proxy()
-        .timeout(Duration::from_secs(30));
+    let base_builder = || {
+        reqwest::ClientBuilder::new()
+            .use_rustls_tls()
+            .no_proxy()
+            .timeout(Duration::from_secs(30))
+    };
 
     // TODO: 添加一个代理测试环节？
     let proxy_url: Option<String> =
@@ -145,36 +147,77 @@ async fn subscribe_url(
         } else {
             None
         };
-    if let Some(proxy_url) = proxy_url {
-        builder = builder.swift_set_proxy(&proxy_url);
-    }
+    let user_agent = options.user_agent.clone().unwrap();
 
-    builder = builder.user_agent(options.user_agent.unwrap());
+    let build_client = |proxy: Option<&str>| {
+        let mut builder = base_builder();
+        if let Some(proxy_url) = proxy {
+            builder = builder.swift_set_proxy(proxy_url);
+        }
+        builder
+            .user_agent(user_agent.clone())
+            .build()
+            .map_err(|e| SubscribeError::Network {
+                url: url.to_string(),
+                source: e,
+            })
+    };
 
-    let client = builder.build().map_err(|e| SubscribeError::Network {
-        url: url.to_string(),
-        source: e,
-    })?;
-    let perform_req = || async { client.get(url.as_str()).send().await?.error_for_status() };
-    let resp = perform_req
-        .retry(backon::ExponentialBuilder::default())
-        // Only retry on network errors or server errors
-        .when(|result| {
-            !result.is_status()
-                || result.status().is_some_and(|status_code| {
-                    !matches!(
-                        status_code,
-                        reqwest::StatusCode::FORBIDDEN
-                            | reqwest::StatusCode::NOT_FOUND
-                            | reqwest::StatusCode::UNAUTHORIZED
-                    )
-                })
-        })
-        .await
-        .map_err(|e| SubscribeError::Network {
-            url: url.to_string(),
-            source: e,
-        })?;
+    let perform_req = |client: reqwest::Client| async move {
+        let perform = || async { client.get(url.as_str()).send().await?.error_for_status() };
+        perform
+            .retry(backon::ExponentialBuilder::default())
+            // Only retry on network errors or server errors
+            .when(|result| {
+                !result.is_status()
+                    || result.status().is_some_and(|status_code| {
+                        !matches!(
+                            status_code,
+                            reqwest::StatusCode::FORBIDDEN
+                                | reqwest::StatusCode::NOT_FOUND
+                                | reqwest::StatusCode::UNAUTHORIZED
+                        )
+                    })
+            })
+            .await
+    };
+
+    let resp = match proxy_url.as_deref() {
+        Some(proxy_url) => {
+            let client = build_client(Some(proxy_url))?;
+            match perform_req(client).await {
+                Ok(resp) => resp,
+                Err(err) => {
+                    if err.is_connect() || err.is_timeout() {
+                        tracing::warn!(
+                            "subscription fetch failed via proxy, retrying without proxy: {err}"
+                        );
+                        let client = build_client(None)?;
+                        perform_req(client)
+                            .await
+                            .map_err(|e| SubscribeError::Network {
+                                url: url.to_string(),
+                                source: e,
+                            })?
+                    } else {
+                        return Err(SubscribeError::Network {
+                            url: url.to_string(),
+                            source: err,
+                        });
+                    }
+                }
+            }
+        }
+        None => {
+            let client = build_client(None)?;
+            perform_req(client)
+                .await
+                .map_err(|e| SubscribeError::Network {
+                    url: url.to_string(),
+                    source: e,
+                })?
+        }
+    };
 
     let header = resp.headers();
     tracing::debug!("headers: {:#?}", header);
