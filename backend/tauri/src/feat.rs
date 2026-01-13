@@ -113,22 +113,18 @@ pub fn change_clash_mode(mode: String) {
     });
 }
 
-// 切换系统代理
+// 切换系统代理 - 使用新的权限管理系统
 pub fn toggle_system_proxy() {
-    let enable = Config::verge().draft().enable_system_proxy;
-    let enable = enable.unwrap_or(false);
-
     tauri::async_runtime::spawn(async move {
-        // 实现互斥：启用系统代理时自动关闭TUN模式
-        match patch_verge(IVerge {
-            enable_system_proxy: Some(!enable),
-            enable_tun_mode: if !enable { Some(false) } else { None }, // 启用系统代理时关闭TUN
-            ..IVerge::default()
-        })
-        .await
-        {
-            Ok(_) => handle::Handle::refresh_verge(),
-            Err(err) => log::error!(target: "app", "{err:?}"),
+        // 使用新的权限管理系统进行智能代理操作
+        match crate::core::privilege::operations::toggle_system_proxy().await {
+            Ok(_) => {
+                log::info!(target: "app", "系统代理切换成功");
+                handle::Handle::refresh_verge();
+            }
+            Err(err) => {
+                log::error!(target: "app", "系统代理切换失败: {err:?}");
+            }
         }
     });
 }
@@ -163,22 +159,18 @@ pub fn disable_system_proxy() {
     });
 }
 
-// 切换tun模式
+// 切换tun模式 - 使用新的权限管理系统  
 pub fn toggle_tun_mode() {
-    let enable = Config::verge().data().enable_tun_mode;
-    let enable = enable.unwrap_or(false);
-
     tauri::async_runtime::spawn(async move {
-        // 实现互斥：启用TUN模式时自动关闭系统代理
-        match patch_verge(IVerge {
-            enable_tun_mode: Some(!enable),
-            enable_system_proxy: if !enable { Some(false) } else { None }, // 启用TUN时关闭系统代理
-            ..IVerge::default()
-        })
-        .await
-        {
-            Ok(_) => handle::Handle::refresh_verge(),
-            Err(err) => log::error!(target: "app", "{err:?}"),
+        // 使用新的权限管理系统进行智能TUN操作
+        match crate::core::privilege::operations::toggle_tun_mode().await {
+            Ok(_) => {
+                log::info!(target: "app", "TUN模式切换成功");
+                handle::Handle::refresh_verge();
+            }
+            Err(err) => {
+                log::error!(target: "app", "TUN模式切换失败: {err:?}");
+            }
         }
     });
 }

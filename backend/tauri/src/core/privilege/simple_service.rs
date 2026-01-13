@@ -1,0 +1,269 @@
+use anyhow::Result;
+use serde::{Deserialize, Serialize};
+use specta::Type;
+use tauri::command;
+use tracing::{info, warn, error};
+
+use crate::core::service::control;
+use nyanpasu_ipc::types::{ServiceStatus, StatusInfo};
+
+/// 简化的服务状态信息
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct SimpleServiceStatus {
+    /// 服务是否已安装
+    pub installed: bool,
+    /// 服务当前状态
+    pub status: ServiceStatus,
+    /// 服务版本信息
+    pub version: Option<String>,
+    /// 状态描述消息
+    pub message: String,
+}
+
+/// 获取简化的服务状态
+#[command]
+#[specta::specta]
+pub async fn get_simple_service_status() -> Result<SimpleServiceStatus, String> {
+    match control::status().await {
+        Ok(status_info) => {
+            let message = match status_info.status {
+                ServiceStatus::Running => "服务运行中，系统代理和TUN模式可正常使用".to_string(),
+                ServiceStatus::Stopped => "服务已安装但未运行".to_string(),
+                ServiceStatus::NotInstalled => "服务未安装，需要安装后才能使用系统代理和TUN模式".to_string(),
+            };
+
+            Ok(SimpleServiceStatus {
+                installed: !matches!(status_info.status, ServiceStatus::NotInstalled),
+                status: status_info.status,
+                version: status_info.server.map(|s| s.version.to_string()),
+                message,
+            })
+        }
+        Err(e) => {
+            warn!("获取服务状态失败: {}", e);
+            Ok(SimpleServiceStatus {
+                installed: false,
+                status: ServiceStatus::NotInstalled,
+                version: None,
+                message: format!("无法获取服务状态: {}", e),
+            })
+        }
+    }
+}
+
+/// 安装服务（一键安装并启用服务模式）
+#[command]
+#[specta::specta]
+pub async fn install_service_simple() -> Result<String, String> {
+    info!("开始一键安装服务");
+
+    // 检查当前状态
+    let current_status = get_simple_service_status().await?;
+    if current_status.installed && matches!(current_status.status, ServiceStatus::Running) {
+        return Ok("服务已安装并运行中".to_string());
+    }
+
+    // 执行安装
+    match control::install_service().await {
+        Ok(()) => {
+            info!("服务安装成功");
+
+            // 启用服务模式配置
+            let patch = crate::config::nyanpasu::IVerge {
+                enable_service_mode: Some(true),
+                ..Default::default()
+            };
+
+            if let Err(e) = crate::feat::patch_verge(patch).await {
+                warn!("更新服务模式配置失败: {}", e);
+                return Ok("服务安装成功，但配置更新失败。请手动启用服务模式。".to_string());
+            }
+
+            // 等待服务启动
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+
+            // 验证服务状态
+            match control::status().await {
+                Ok(status) => {
+                    if matches!(status.status, ServiceStatus::Running) {
+                        Ok("✅ 服务安装成功！现在可以享受丝滑的系统代理和TUN模式体验。".to_string())
+                    } else {
+                        warn!("服务安装后未运行，尝试启动");
+                        match control::start_service().await {
+                            Ok(()) => Ok("✅ 服务安装并启动成功！".to_string()),
+                            Err(e) => Ok(format!("服务安装成功，但启动失败: {}。可能需要重启应用。", e)),
+                        }
+                    }
+                }
+                Err(e) => {
+                    warn!("安装后无法获取服务状态: {}", e);
+                    Ok("服务已安装，但无法验证状态。建议重启应用。".to_string())
+                }
+            }
+        }
+        Err(e) => {
+            error!("服务安装失败: {}", e);
+            Err(format!("服务安装失败: {}。请确保有管理员权限，或尝试以管理员身份运行。", e))
+        }
+    }
+}
+
+/// 卸载服务
+#[command]
+#[specta::specta]
+pub async fn uninstall_service_simple() -> Result<String, String> {
+    info!("开始卸载服务");
+
+    // 检查当前状态
+    let current_status = get_simple_service_status().await?;
+    if !current_status.installed {
+        return Ok("服务未安装，无需卸载".to_string());
+    }
+
+    // 先停止服务（如果正在运行）
+    if matches!(current_status.status, ServiceStatus::Running) {
+        info!("正在停止服务...");
+        if let Err(e) = control::stop_service().await {
+            warn!("停止服务失败，继续卸载: {}", e);
+        }
+    }
+
+    // 执行卸载
+    match control::uninstall_service().await {
+        Ok(()) => {
+            info!("服务卸载成功");
+
+            // 禁用服务模式配置
+            let patch = crate::config::nyanpasu::IVerge {
+                enable_service_mode: Some(false),
+                ..Default::default()
+            };
+
+            if let Err(e) = crate::feat::patch_verge(patch).await {
+                warn!("更新服务模式配置失败: {}", e);
+            }
+
+            Ok("✅ 服务卸载成功。系统代理和TUN模式将需要UAC权限确认。".to_string())
+        }
+        Err(e) => {
+            error!("服务卸载失败: {}", e);
+            Err(format!("服务卸载失败: {}。请确保有管理员权限。", e))
+        }
+    }
+}
+
+/// 检查是否需要显示服务管理提示
+#[command]
+#[specta::specta]
+pub async fn check_service_recommendation() -> Result<ServiceRecommendation, String> {
+    let verge = crate::config::Config::verge();
+    let config = verge.latest();
+    let system_proxy_enabled = config.enable_system_proxy.unwrap_or(false);
+    let tun_mode_enabled = config.enable_tun_mode.unwrap_or(false);
+    let service_mode_enabled = config.enable_service_mode.unwrap_or(false);
+
+    // 如果用户使用了系统代理或TUN模式，但服务未安装，则推荐安装
+    if (system_proxy_enabled || tun_mode_enabled) && !service_mode_enabled {
+        let status = get_simple_service_status().await?;
+        if !status.installed {
+            return Ok(ServiceRecommendation {
+                should_recommend: true,
+                title: "建议安装服务模式".to_string(),
+                message: "检测到您正在使用系统代理或TUN模式。安装服务模式可以避免频繁的UAC权限确认，获得更好的使用体验。".to_string(),
+                benefits: vec![
+                    "无需每次确认UAC权限".to_string(),
+                    "更快的代理切换速度".to_string(),
+                    "更稳定的权限管理".to_string(),
+                    "符合系统安全最佳实践".to_string(),
+                ],
+                action_text: "一键安装服务".to_string(),
+            });
+        }
+    }
+
+    Ok(ServiceRecommendation {
+        should_recommend: false,
+        title: "".to_string(),
+        message: "".to_string(),
+        benefits: vec![],
+        action_text: "".to_string(),
+    })
+}
+
+/// 服务推荐信息
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct ServiceRecommendation {
+    /// 是否应该推荐安装服务
+    pub should_recommend: bool,
+    /// 推荐标题
+    pub title: String,
+    /// 推荐消息
+    pub message: String,
+    /// 服务优势列表
+    pub benefits: Vec<String>,
+    /// 操作按钮文字
+    pub action_text: String,
+}
+
+/// 获取服务管理操作建议
+#[command]
+#[specta::specta]
+pub async fn get_service_action() -> Result<ServiceAction, String> {
+    let status = get_simple_service_status().await?;
+    
+    let action = if !status.installed {
+        ServiceActionType::Install
+    } else {
+        ServiceActionType::Uninstall
+    };
+
+    let button_text = match action {
+        ServiceActionType::Install => "安装服务".to_string(),
+        ServiceActionType::Uninstall => "卸载服务".to_string(),
+    };
+
+    let description = match (&action, &status.status) {
+        (ServiceActionType::Install, _) => {
+            "安装服务后，系统代理和TUN模式切换将无需UAC确认，提供丝滑的使用体验".to_string()
+        }
+        (ServiceActionType::Uninstall, ServiceStatus::Running) => {
+            "服务运行中。卸载后系统代理和TUN模式将需要UAC权限确认".to_string()
+        }
+        (ServiceActionType::Uninstall, ServiceStatus::Stopped) => {
+            "服务已安装但未运行。可以卸载以完全移除服务".to_string()
+        }
+        (ServiceActionType::Uninstall, ServiceStatus::NotInstalled) => {
+            "服务未安装".to_string()
+        }
+    };
+
+    Ok(ServiceAction {
+        action,
+        button_text,
+        description,
+        status: status.status,
+        is_busy: false,
+    })
+}
+
+/// 服务操作类型
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub enum ServiceActionType {
+    Install,
+    Uninstall,
+}
+
+/// 服务操作信息
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct ServiceAction {
+    /// 当前应该执行的操作
+    pub action: ServiceActionType,
+    /// 按钮显示文字
+    pub button_text: String,
+    /// 操作描述
+    pub description: String,
+    /// 当前服务状态
+    pub status: ServiceStatus,
+    /// 是否正在执行操作
+    pub is_busy: bool,
+}

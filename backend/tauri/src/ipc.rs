@@ -481,20 +481,61 @@ pub async fn patch_verge_config(payload: IVerge) -> Result {
     Ok(())
 }
 
-/// toggle system proxy with mutual exclusion
+/// toggle system proxy with service dependency
 #[tauri::command]
 #[specta::specta]
-pub fn toggle_system_proxy() -> Result {
-    feat::toggle_system_proxy();
-    Ok(())
+pub async fn toggle_system_proxy() -> Result<crate::core::privilege::PrivilegedOperationResult> {
+    use crate::core::privilege::{PrivilegedOperation, manager::PrivilegeManager};
+    use crate::config::Config;
+
+    let current_enable = Config::verge()
+        .latest()
+        .enable_system_proxy
+        .unwrap_or(false);
+    
+    let operation = PrivilegedOperation::SetSystemProxy {
+        enable: !current_enable,
+        port: Config::verge()
+            .latest()
+            .verge_mixed_port
+            .unwrap_or(Config::clash().data().get_mixed_port()),
+        bypass: Config::verge()
+            .latest()
+            .system_proxy_bypass
+            .clone()
+            .unwrap_or_default()
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect(),
+    };
+
+    PrivilegeManager::global()
+        .execute_operation(operation)
+        .await
+        .map_err(|e| IpcError::Custom(e.to_string()))
 }
 
-/// toggle tun mode with mutual exclusion
+/// toggle tun mode with service dependency
 #[tauri::command]
 #[specta::specta]
-pub fn toggle_tun_mode() -> Result {
-    feat::toggle_tun_mode();
-    Ok(())
+pub async fn toggle_tun_mode() -> Result<crate::core::privilege::PrivilegedOperationResult> {
+    use crate::core::privilege::{PrivilegedOperation, manager::PrivilegeManager};
+    use crate::config::Config;
+
+    let current_enable = Config::verge()
+        .latest()
+        .enable_tun_mode
+        .unwrap_or(false);
+    
+    let operation = PrivilegedOperation::SetTunMode {
+        enable: !current_enable,
+    };
+
+    PrivilegeManager::global()
+        .execute_operation(operation)
+        .await
+        .map_err(|e| IpcError::Custom(e.to_string()))
 }
 
 #[tauri::command]

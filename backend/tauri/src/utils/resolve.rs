@@ -163,6 +163,11 @@ pub fn resolve_setup(app: &mut App) {
         .await
     }));
 
+    log::trace!("init privilege management system");
+    log_err!(tauri::async_runtime::block_on(async {
+        crate::core::privilege::operations::initialize_privilege_system().await
+    }));
+
     #[cfg(any(windows, target_os = "linux"))]
     log::trace!("init system tray");
     #[cfg(any(windows, target_os = "linux"))]
