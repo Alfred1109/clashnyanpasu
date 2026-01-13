@@ -56,11 +56,17 @@ pub async fn install_service() -> anyhow::Result<()> {
     let child = tokio::task::spawn_blocking(move || {
         #[cfg(not(target_os = "macos"))]
         {
-            RunasCommand::new(SERVICE_PATH.as_path())
-                .args(&args)
-                .gui(false)
-                .show(false)
-                .status()
+            let mut cmd = RunasCommand::new(SERVICE_PATH.as_path());
+            cmd.args(&args);
+            #[cfg(windows)]
+            {
+                cmd.gui(true).show(true);
+            }
+            #[cfg(not(windows))]
+            {
+                cmd.gui(false).show(false);
+            }
+            cmd.status()
         }
         #[cfg(target_os = "macos")]
         {
@@ -104,11 +110,17 @@ pub async fn update_service() -> anyhow::Result<()> {
         const ARGS: &[&str] = &["update"];
         #[cfg(not(target_os = "macos"))]
         {
-            RunasCommand::new(SERVICE_PATH.as_path())
-                .args(ARGS)
-                .gui(false)
-                .show(false)
-                .status()
+            let mut cmd = RunasCommand::new(SERVICE_PATH.as_path());
+            cmd.args(ARGS);
+            #[cfg(windows)]
+            {
+                cmd.gui(true).show(true);
+            }
+            #[cfg(not(windows))]
+            {
+                cmd.gui(false).show(false);
+            }
+            cmd.status()
         }
         #[cfg(target_os = "macos")]
         {
@@ -147,11 +159,17 @@ pub async fn uninstall_service() -> anyhow::Result<()> {
         const ARGS: &[&str] = &["uninstall"];
         #[cfg(not(target_os = "macos"))]
         {
-            RunasCommand::new(SERVICE_PATH.as_path())
-                .args(ARGS)
-                .gui(false)
-                .show(false)
-                .status()
+            let mut cmd = RunasCommand::new(SERVICE_PATH.as_path());
+            cmd.args(ARGS);
+            #[cfg(windows)]
+            {
+                cmd.gui(true).show(true);
+            }
+            #[cfg(not(windows))]
+            {
+                cmd.gui(false).show(false);
+            }
+            cmd.status()
         }
         #[cfg(target_os = "macos")]
         {
@@ -202,11 +220,19 @@ pub async fn start_service() -> anyhow::Result<()> {
             };
 
             #[cfg(not(all(unix, not(target_os = "macos"))))]
-            let status = RunasCommand::new(SERVICE_PATH.as_path())
-                .args(&["start"])
-                .gui(false)
-                .show(false)
-                .status();
+            let status = {
+                let mut cmd = RunasCommand::new(SERVICE_PATH.as_path());
+                cmd.args(&["start"]);
+                #[cfg(windows)]
+                {
+                    cmd.gui(true).show(true);
+                }
+                #[cfg(not(windows))]
+                {
+                    cmd.gui(false).show(false);
+                }
+                cmd.status()
+            };
 
             status
         }
@@ -251,11 +277,17 @@ pub async fn stop_service() -> anyhow::Result<()> {
         const ARGS: &[&str] = &["stop"];
         #[cfg(not(target_os = "macos"))]
         {
-            RunasCommand::new(SERVICE_PATH.as_path())
-                .args(ARGS)
-                .gui(false)
-                .show(false)
-                .status()
+            let mut cmd = RunasCommand::new(SERVICE_PATH.as_path());
+            cmd.args(ARGS);
+            #[cfg(windows)]
+            {
+                cmd.gui(true).show(true);
+            }
+            #[cfg(not(windows))]
+            {
+                cmd.gui(false).show(false);
+            }
+            cmd.status()
         }
         #[cfg(target_os = "macos")]
         {

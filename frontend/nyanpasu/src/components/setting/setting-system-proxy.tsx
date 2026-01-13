@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { formatError } from '@/utils'
 import { message } from '@/utils/notification'
 import {
+  Backdrop,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -13,9 +15,11 @@ import {
   InputAdornment,
   List,
   ListItem,
+  Typography,
 } from '@mui/material'
 import Grid from '@mui/material/Grid'
 import {
+  restartSidecar,
   toggleSystemProxy,
   toggleTunMode,
   useSetting,
@@ -31,6 +35,26 @@ import {
   TextItem,
 } from '@nyanpasu/ui'
 import { PaperSwitchButton } from './modules/system-proxy'
+import {
+  ServerManualPromptDialogWrapper,
+  useServerManualPromptDialog,
+} from './modules/service-manual-prompt-dialog'
+
+const withTimeout = async <T,>(promise: Promise<T>, ms: number) => {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error('timeout'))
+    }, ms)
+  })
+  try {
+    return await Promise.race([promise, timeout])
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+    }
+  }
+}
 
 type ModeAction = 'system_proxy' | 'tun'
 
@@ -222,10 +246,12 @@ export const SettingSystemProxy = () => {
   const { query, upsert: serviceUpsert } = useSystemService()
   const systemProxy = useSetting('enable_system_proxy')
   const tunMode = useSetting('enable_tun_mode')
+  const promptDialog = useServerManualPromptDialog()
   const isServiceInstalled = query.data?.status !== 'not_installed'
   const [showInstallDialog, setShowInstallDialog] = useState(false)
   const [showUninstallDialog, setShowUninstallDialog] = useState(false)
   const [serviceActionPending, setServiceActionPending] = useState(false)
+  const [serviceActionText, setServiceActionText] = useState<string>('')
   const [pendingModeAction, setPendingModeAction] = useState<ModeAction | null>(
     null,
   )
@@ -266,19 +292,42 @@ export const SettingSystemProxy = () => {
     setShowInstallDialog(false)
     try {
       setServiceActionPending(true)
-      await serviceUpsert.mutateAsync('install')
+      setServiceActionText(t('install'))
+      await withTimeout(serviceUpsert.mutateAsync('install'), 60_000)
+      await restartSidecar()
+
+      for (let i = 0; i < 10; i++) {
+        const result = await query.refetch()
+        if (result.data?.status !== 'not_installed') {
+          break
+        }
+        await new Promise((resolve) => setTimeout(resolve, 500))
+      }
 
       if (pendingModeAction) {
-        await serviceUpsert.mutateAsync('start')
+        setServiceActionText(t('start'))
+        await withTimeout(serviceUpsert.mutateAsync('start'), 30_000)
+        await restartSidecar()
 
         if (pendingModeAction === 'system_proxy') {
-          await toggleSystemProxy()
+          setServiceActionText(t('System Proxy'))
+          await withTimeout(toggleSystemProxy(), 30_000)
         }
         if (pendingModeAction === 'tun') {
-          await toggleTunMode()
+          setServiceActionText(t('TUN Mode'))
+          await withTimeout(toggleTunMode(), 30_000)
         }
       }
+
+      await query.refetch()
     } catch (error) {
+      if (error instanceof Error && error.message === 'timeout') {
+        message(t('Operation timed out, it may be waiting for UAC/permission prompt'), {
+          title: t('Error'),
+          kind: 'error',
+        })
+        promptDialog.show('install')
+      } else {
       message(
         `${t('Failed to install system service')}\n${formatError(error)}`,
         {
@@ -286,9 +335,12 @@ export const SettingSystemProxy = () => {
           kind: 'error',
         },
       )
+      promptDialog.show('install')
+      }
     } finally {
       setPendingModeAction(null)
       setServiceActionPending(false)
+      setServiceActionText('')
     }
   })
 
@@ -296,6 +348,7 @@ export const SettingSystemProxy = () => {
     setShowUninstallDialog(false)
     try {
       setServiceActionPending(true)
+      setServiceActionText(t('uninstall'))
 
       if (systemProxy.value) {
         await toggleSystemProxy()
@@ -304,14 +357,26 @@ export const SettingSystemProxy = () => {
         await toggleTunMode()
       }
 
-      await serviceUpsert.mutateAsync('uninstall')
+      await withTimeout(serviceUpsert.mutateAsync('uninstall'), 60_000)
+      await restartSidecar()
+      await query.refetch()
     } catch (error) {
+      if (error instanceof Error && error.message === 'timeout') {
+        message(t('Operation timed out, it may be waiting for UAC/permission prompt'), {
+          title: t('Error'),
+          kind: 'error',
+        })
+        promptDialog.show('uninstall')
+      } else {
       message(`${t('Error')}: ${formatError(error)}`, {
         title: t('Error'),
         kind: 'error',
       })
+      promptDialog.show('uninstall')
+      }
     } finally {
       setServiceActionPending(false)
+      setServiceActionText('')
     }
   })
 
@@ -322,6 +387,19 @@ export const SettingSystemProxy = () => {
         <ExpandMore expand={expand} onClick={() => setExpand(!expand)} />
       }
     >
+      <ServerManualPromptDialogWrapper />
+      <Backdrop
+        open={serviceActionPending}
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      >
+        <div className="flex flex-col items-center gap-3">
+          <CircularProgress color="inherit" />
+          <Typography variant="body2">
+            {serviceActionText || t('Processing')}
+          </Typography>
+        </div>
+      </Backdrop>
+
       <Grid container spacing={2}>
         <Grid size={{ xs: 6 }}>
           <SystemProxyButton
