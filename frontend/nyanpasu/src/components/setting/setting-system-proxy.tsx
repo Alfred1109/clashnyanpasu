@@ -296,12 +296,18 @@ export const SettingSystemProxy = () => {
       await withTimeout(serviceUpsert.mutateAsync('install'), 60_000)
       await restartSidecar()
 
+      let currentStatus: string | undefined = query.data?.status
       for (let i = 0; i < 10; i++) {
         const result = await query.refetch()
-        if (result.data?.status !== 'not_installed') {
+        currentStatus = result.data?.status
+        if (currentStatus !== 'not_installed') {
           break
         }
         await new Promise((resolve) => setTimeout(resolve, 500))
+      }
+
+      if (currentStatus === 'not_installed') {
+        throw new Error('service_not_installed')
       }
 
       if (pendingModeAction) {
@@ -323,6 +329,12 @@ export const SettingSystemProxy = () => {
     } catch (error) {
       if (error instanceof Error && error.message === 'timeout') {
         message(t('Operation timed out, it may be waiting for UAC/permission prompt'), {
+          title: t('Error'),
+          kind: 'error',
+        })
+        promptDialog.show('install')
+      } else if (error instanceof Error && error.message === 'service_not_installed') {
+        message(t('Failed to install system service'), {
           title: t('Error'),
           kind: 'error',
         })
