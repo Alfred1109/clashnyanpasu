@@ -101,7 +101,7 @@ impl HttpModuleLoader {
         let source = Source::from_bytes(source_str.as_bytes());
 
         let module = Module::parse(source, None, context);
-        
+
         // Validate module before caching - only cache successful parses
         match &module {
             Ok(_) => {

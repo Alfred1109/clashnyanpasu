@@ -16,8 +16,8 @@ pub mod net;
 pub mod open;
 
 pub mod dock;
-pub mod sudo;
 pub mod platform;
+pub mod sudo;
 
 #[cfg(test)]
 #[cfg(windows)]

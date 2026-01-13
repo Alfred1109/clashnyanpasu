@@ -33,7 +33,9 @@ impl IPCServer {
             anyhow::bail!("IPC server is already connected or not initialized");
         }
 
-        let oneshot_server = self.oneshot_server.take()
+        let oneshot_server = self
+            .oneshot_server
+            .take()
             .ok_or_else(|| anyhow::anyhow!("IPC oneshot server is not available"))?;
         let (_, tx) = oneshot_server.accept()?;
         self.tx = Some(tx);

@@ -82,13 +82,12 @@ fn correct_original_mapping_order(target: &mut Value, original: &Value) {
         }
         (Value::Sequence(target), Value::Sequence(original)) if target.len() == original.len() => {
             // Ensure mapping order consistency by sorting both sequences before processing
-            let mut target_original_pairs: Vec<_> = target.iter_mut().zip(original.iter()).collect();
-            
+            let mut target_original_pairs: Vec<_> =
+                target.iter_mut().zip(original.iter()).collect();
+
             // Sort by a stable key (using debug representation as fallback)
-            target_original_pairs.sort_by(|a, b| {
-                format!("{:?}", a.1).cmp(&format!("{:?}", b.1))
-            });
-            
+            target_original_pairs.sort_by(|a, b| format!("{:?}", a.1).cmp(&format!("{:?}", b.1)));
+
             for (target_value, original_value) in target_original_pairs {
                 correct_original_mapping_order(target_value, original_value);
             }

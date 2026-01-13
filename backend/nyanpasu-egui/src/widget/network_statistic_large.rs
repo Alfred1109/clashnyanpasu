@@ -140,14 +140,14 @@ impl NyanpasuNetworkStatisticLargeWidget {
         setup_fonts(&cc.egui_ctx);
         setup_custom_style(&cc.egui_ctx);
         egui_extras::install_image_loaders(&cc.egui_ctx);
-        let rx = crate::ipc::setup_ipc_receiver_with_env()
-            .unwrap_or_else(|e| {
-                eprintln!("Failed to setup IPC receiver: {}", e);
-                // Create a dummy IPC channel as fallback
-                let (tx, rx) = ipc_channel::ipc::channel().expect("Failed to create fallback IPC channel");
-                drop(tx); // Close sender to avoid blocking
-                rx
-            });
+        let rx = crate::ipc::setup_ipc_receiver_with_env().unwrap_or_else(|e| {
+            eprintln!("Failed to setup IPC receiver: {}", e);
+            // Create a dummy IPC channel as fallback
+            let (tx, rx) =
+                ipc_channel::ipc::channel().expect("Failed to create fallback IPC channel");
+            drop(tx); // Close sender to avoid blocking
+            rx
+        });
         let widget = NyanpasuNetworkStatisticLargeWidget {
             inner: Arc::new(RwLock::new(NyanpasuNetworkStatisticLargeWidgetInner {
                 egui_ctx: cc.egui_ctx.clone(),
@@ -187,7 +187,9 @@ impl NyanpasuNetworkStatisticLargeWidget {
         #[cfg(target_os = "macos")]
         {
             // Use platform utils from tauri crate - requires adding tauri as dependency
-            eprintln!("Note: macOS activation policy should be set via tauri utils::platform module");
+            eprintln!(
+                "Note: macOS activation policy should be set via tauri utils::platform module"
+            );
         }
 
         let options = eframe::NativeOptions {

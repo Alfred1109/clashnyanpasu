@@ -12,13 +12,13 @@ pub fn parse_svg_with_current_color_replace<T: Into<CssColor>>(
 ) -> Result<Tree, Error> {
     let color: CssColor = color.into();
     let color_hex = color.to_css_hex();
-    
+
     // More robust color replacement supporting various formats
     let svg = svg
         .replace(r#""currentColor""#, &format!(r#""{}""#, color_hex))
         .replace(r#"'currentColor'"#, &format!(r#"'{}'"#, color_hex))
         .replace("currentColor", &color_hex);
-    
+
     Tree::from_str(svg.as_str(), &Options::default())
 }
 

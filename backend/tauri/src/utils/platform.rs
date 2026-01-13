@@ -8,7 +8,7 @@ pub fn set_application_activation_policy() {
     use objc2_app_kit::{NSApplication, NSApplicationActivationPolicy};
     use objc2_foundation::MainThreadMarker;
     use std::cell::Cell;
-    
+
     thread_local! {
         static MARK: Cell<MainThreadMarker> = Cell::new(MainThreadMarker::new().unwrap());
     }

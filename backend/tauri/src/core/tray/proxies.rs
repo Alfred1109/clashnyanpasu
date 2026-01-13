@@ -27,10 +27,13 @@ async fn loop_task() {
             if guard.updated_at() == 0 {
                 error!("proxies not updated yet!!!!");
                 // Send notification to user about proxy update issue
-                let _ = crate::core::handle::Handle::emit("tray-error", serde_json::json!({
-                    "type": "proxy_update_failed",
-                    "message": "Proxy information not yet available. Please wait for initialization to complete."
-                }));
+                let _ = crate::core::handle::Handle::emit(
+                    "tray-error",
+                    serde_json::json!({
+                        "type": "proxy_update_failed",
+                        "message": "Proxy information not yet available. Please wait for initialization to complete."
+                    }),
+                );
             }
 
             // else {
@@ -585,10 +588,13 @@ pub fn on_system_tray_event(event: &str) {
     if let Err(e) = wrapper() {
         error!("on_system_tray_event failed: {:?}", e);
         // Send user-friendly notification about tray event failure
-        let _ = crate::core::handle::Handle::emit("tray-error", serde_json::json!({
-            "type": "tray_event_failed",
-            "message": "System tray operation failed. Please try again or restart the application if the issue persists.",
-            "error": format!("{}", e)
-        }));
+        let _ = crate::core::handle::Handle::emit(
+            "tray-error",
+            serde_json::json!({
+                "type": "tray_event_failed",
+                "message": "System tray operation failed. Please try again or restart the application if the issue persists.",
+                "error": format!("{}", e)
+            }),
+        );
     }
 }

@@ -16,7 +16,7 @@ fn get_window_state_path() -> std::io::Result<PathBuf> {
         }
         return Ok(path);
     }
-    
+
     // Fallback to system temp directory
     let mut path = std::env::temp_dir();
     path.push("nyanpasu-egui");
