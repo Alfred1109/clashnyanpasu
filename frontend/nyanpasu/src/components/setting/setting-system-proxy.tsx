@@ -30,20 +30,26 @@ import {
   SwitchItem,
   TextItem,
 } from '@nyanpasu/ui'
-import { PermissionDialog } from './modules/permission-dialog'
 import { PaperSwitchButton } from './modules/system-proxy'
 
-const TunModeButton = () => {
+type ModeAction = 'system_proxy' | 'tun'
+
+const TunModeButton = ({
+  serviceStatus,
+  onRequireInstall,
+  disabled,
+}: {
+  serviceStatus?: string
+  onRequireInstall: (action: ModeAction) => void
+  disabled?: boolean
+}) => {
   const { t } = useTranslation()
-  const [showPermissionDialog, setShowPermissionDialog] = useState(false)
 
   const tunMode = useSetting('enable_tun_mode')
-  const serviceMode = useSetting('enable_service_mode')
 
   const handleTunMode = useLockFn(async () => {
-    // 如果要启用TUN模式且不在服务模式下，先检查权限
-    if (!tunMode.value && !serviceMode.value) {
-      setShowPermissionDialog(true)
+    if (!tunMode.value && serviceStatus === 'not_installed') {
+      onRequireInstall('tun')
       return
     }
 
@@ -57,41 +63,34 @@ const TunModeButton = () => {
     }
   })
 
-  const handlePermissionConfirm = useLockFn(async () => {
-    setShowPermissionDialog(false)
-    try {
-      await toggleTunMode()
-    } catch (error) {
-      message(`Activation TUN Mode failed! \n Error: ${formatError(error)}`, {
-        title: t('Error'),
-        kind: 'error',
-      })
-    }
-  })
-
   return (
-    <>
-      <PaperSwitchButton
-        label={t('TUN Mode')}
-        checked={Boolean(tunMode.value)}
-        onClick={handleTunMode}
-      />
-      <PermissionDialog
-        open={showPermissionDialog}
-        onClose={() => setShowPermissionDialog(false)}
-        onConfirm={handlePermissionConfirm}
-        permissionType="tun"
-      />
-    </>
+    <PaperSwitchButton
+      label={t('TUN Mode')}
+      checked={Boolean(tunMode.value)}
+      onClick={handleTunMode}
+      disabled={disabled}
+    />
   )
 }
 
-const SystemProxyButton = () => {
+const SystemProxyButton = ({
+  serviceStatus,
+  onRequireInstall,
+  disabled,
+}: {
+  serviceStatus?: string
+  onRequireInstall: (action: ModeAction) => void
+  disabled?: boolean
+}) => {
   const { t } = useTranslation()
 
   const systemProxy = useSetting('enable_system_proxy')
 
   const handleSystemProxy = useLockFn(async () => {
+    if (!systemProxy.value && serviceStatus === 'not_installed') {
+      onRequireInstall('system_proxy')
+      return
+    }
     try {
       await toggleSystemProxy()
     } catch (error) {
@@ -107,6 +106,7 @@ const SystemProxyButton = () => {
       label={t('System Proxy')}
       checked={Boolean(systemProxy.value)}
       onClick={handleSystemProxy}
+      disabled={disabled}
     />
   )
 }
@@ -220,11 +220,15 @@ export const SettingSystemProxy = () => {
   const [expand, setExpand] = useState(false)
 
   const { query, upsert: serviceUpsert } = useSystemService()
-  const serviceMode = useSetting('enable_service_mode')
+  const systemProxy = useSetting('enable_system_proxy')
+  const tunMode = useSetting('enable_tun_mode')
   const isServiceInstalled = query.data?.status !== 'not_installed'
   const [showInstallDialog, setShowInstallDialog] = useState(false)
   const [showUninstallDialog, setShowUninstallDialog] = useState(false)
   const [serviceActionPending, setServiceActionPending] = useState(false)
+  const [pendingModeAction, setPendingModeAction] = useState<ModeAction | null>(
+    null,
+  )
 
   const getStatusColor = () => {
     switch (query.data?.status) {
@@ -253,37 +257,10 @@ export const SettingSystemProxy = () => {
     }
   }
 
-  const handleServiceModeToggle = useLockFn(async () => {
-    if (!serviceMode.value && !isServiceInstalled) {
-      setShowInstallDialog(true)
-      return
-    }
-
-    try {
-      setServiceActionPending(true)
-
-      if (!serviceMode.value) {
-        const status = query.data?.status
-        if (isServiceInstalled && status === 'stopped') {
-          await serviceUpsert.mutateAsync('start')
-        }
-        await serviceMode.upsert(true)
-      } else {
-        const status = query.data?.status
-        if (isServiceInstalled && status === 'running') {
-          await serviceUpsert.mutateAsync('stop')
-        }
-        await serviceMode.upsert(false)
-      }
-    } catch (error) {
-      message(`Service Mode toggle failed! \n Error: ${formatError(error)}`, {
-        title: t('Error'),
-        kind: 'error',
-      })
-    } finally {
-      setServiceActionPending(false)
-    }
-  })
+  const handleRequireInstall = (action: ModeAction) => {
+    setPendingModeAction(action)
+    setShowInstallDialog(true)
+  }
 
   const handleInstallConfirm = useLockFn(async () => {
     setShowInstallDialog(false)
@@ -291,8 +268,16 @@ export const SettingSystemProxy = () => {
       setServiceActionPending(true)
       await serviceUpsert.mutateAsync('install')
 
-      await serviceUpsert.mutateAsync('start')
-      await serviceMode.upsert(true)
+      if (pendingModeAction) {
+        await serviceUpsert.mutateAsync('start')
+
+        if (pendingModeAction === 'system_proxy') {
+          await toggleSystemProxy()
+        }
+        if (pendingModeAction === 'tun') {
+          await toggleTunMode()
+        }
+      }
     } catch (error) {
       message(
         `${t('Failed to install system service')}\n${formatError(error)}`,
@@ -302,6 +287,7 @@ export const SettingSystemProxy = () => {
         },
       )
     } finally {
+      setPendingModeAction(null)
       setServiceActionPending(false)
     }
   })
@@ -311,13 +297,11 @@ export const SettingSystemProxy = () => {
     try {
       setServiceActionPending(true)
 
-      const status = query.data?.status
-      if (isServiceInstalled && status === 'running') {
-        await serviceUpsert.mutateAsync('stop')
+      if (systemProxy.value) {
+        await toggleSystemProxy()
       }
-
-      if (serviceMode.value) {
-        await serviceMode.upsert(false)
+      if (tunMode.value) {
+        await toggleTunMode()
       }
 
       await serviceUpsert.mutateAsync('uninstall')
@@ -340,23 +324,24 @@ export const SettingSystemProxy = () => {
     >
       <Grid container spacing={2}>
         <Grid size={{ xs: 6 }}>
-          <SystemProxyButton />
+          <SystemProxyButton
+            serviceStatus={query.data?.status}
+            onRequireInstall={handleRequireInstall}
+            disabled={serviceActionPending || query.isLoading}
+          />
         </Grid>
 
         <Grid size={{ xs: 6 }}>
-          <TunModeButton />
+          <TunModeButton
+            serviceStatus={query.data?.status}
+            onRequireInstall={handleRequireInstall}
+            disabled={serviceActionPending || query.isLoading}
+          />
         </Grid>
       </Grid>
 
       {/* 服务模式部分 */}
       <List disablePadding sx={{ pt: 1 }}>
-        <SwitchItem
-          label={t('Service Mode')}
-          disabled={serviceActionPending || query.isLoading}
-          checked={serviceMode.value || false}
-          onChange={handleServiceModeToggle}
-        />
-
         <ListItem sx={{ pl: 0, pr: 0 }}>
           <div className="text-base leading-10">{t('Status')}</div>
           <div className="ml-auto">
@@ -379,23 +364,39 @@ export const SettingSystemProxy = () => {
           </ListItem>
         )}
 
-        {isServiceInstalled &&
-          !serviceMode.value &&
-          query.data?.status === 'stopped' && (
-            <ListItem sx={{ pl: 0, pr: 0 }}>
-              <div className="ml-auto">
-                <Button
-                  size="small"
-                  variant="outlined"
-                  color="error"
-                  onClick={() => setShowUninstallDialog(true)}
-                  disabled={serviceActionPending || query.isLoading}
-                >
-                  {t('uninstall')}
-                </Button>
-              </div>
-            </ListItem>
-          )}
+        {query.data?.status === 'not_installed' && (
+          <ListItem sx={{ pl: 0, pr: 0 }}>
+            <div className="ml-auto">
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => {
+                  setPendingModeAction(null)
+                  setShowInstallDialog(true)
+                }}
+                disabled={serviceActionPending || query.isLoading}
+              >
+                {t('install')}
+              </Button>
+            </div>
+          </ListItem>
+        )}
+
+        {query.data?.status === 'stopped' && (
+          <ListItem sx={{ pl: 0, pr: 0 }}>
+            <div className="ml-auto">
+              <Button
+                size="small"
+                variant="outlined"
+                color="error"
+                onClick={() => setShowUninstallDialog(true)}
+                disabled={serviceActionPending || query.isLoading}
+              >
+                {t('uninstall')}
+              </Button>
+            </div>
+          </ListItem>
+        )}
       </List>
 
       <Dialog

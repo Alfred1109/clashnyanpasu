@@ -57,6 +57,7 @@ impl ServicePrivilegeHandler {
         // 1. 更新配置（这会触发服务端的配置重新加载）
         let patch = crate::config::nyanpasu::IVerge {
             enable_system_proxy: Some(enable),
+            enable_tun_mode: if enable { Some(false) } else { None },
             verge_mixed_port: Some(port),
             system_proxy_bypass: if bypass.is_empty() {
                 None

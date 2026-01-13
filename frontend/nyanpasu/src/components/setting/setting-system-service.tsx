@@ -39,7 +39,6 @@ export const SettingSystemService = () => {
 
   const getInstallButtonString = () => {
     switch (query.data?.status) {
-      case 'running':
       case 'stopped': {
         return t('uninstall')
       }
@@ -53,31 +52,8 @@ export const SettingSystemService = () => {
       }
     }
   }
-  const getControlButtonString = () => {
-    switch (query.data?.status) {
-      case 'running': {
-        return t('stop')
-      }
-
-      case 'stopped': {
-        return t('start')
-      }
-
-      case 'not_installed': {
-        return t('start')
-      }
-
-      default: {
-        return ''
-      }
-    }
-  }
 
   const isDisabled = query.data?.status === 'not_installed'
-  const canControl =
-    query.data?.status === 'running' ||
-    query.data?.status === 'stopped' ||
-    query.data?.status === 'not_installed'
   const isLoading = query.isLoading
 
   const promptDialog = useServerManualPromptDialog()
@@ -87,7 +63,6 @@ export const SettingSystemService = () => {
     startInstallOrUninstall(async () => {
       try {
         switch (query.data?.status) {
-          case 'running':
           case 'stopped':
             await upsert.mutateAsync('uninstall')
             break
@@ -162,44 +137,6 @@ export const SettingSystemService = () => {
     })
   })
 
-  const [serviceControlPending, startServiceControl] = useTransition()
-  const handleControlClick = useMemoizedFn(() => {
-    startServiceControl(async () => {
-      try {
-        switch (query.data?.status) {
-          case 'running':
-            await upsert.mutateAsync('stop')
-            break
-
-          case 'stopped':
-            await upsert.mutateAsync('start')
-            break
-
-          case 'not_installed':
-            setInstallAction('start_service')
-            setShowInstallDialog(true)
-            return
-
-          default:
-            break
-        }
-        await restartSidecar()
-      } catch (e) {
-        const errorMessage =
-          query.data?.status === 'running'
-            ? `Stop failed: ${formatError(e)}`
-            : `Start failed: ${formatError(e)}`
-
-        message(errorMessage, {
-          kind: 'error',
-          title: t('Error'),
-        })
-        // If start failed show a prompt to user to start the service manually
-        promptDialog.show(query.data?.status === 'running' ? 'stop' : 'start')
-      }
-    })
-  })
-
   const handleServiceModeToggle = useMemoizedFn(() => {
     if (!serviceMode.value && isDisabled) {
       setInstallAction('enable_service_mode')
@@ -237,31 +174,17 @@ export const SettingSystemService = () => {
             })}
           />
           <div className="flex gap-2">
-            {canControl && (
+            {(query.data?.status === 'not_installed' ||
+              query.data?.status === 'stopped') && (
               <Button
                 variant="contained"
-                onClick={handleControlClick}
-                loading={serviceControlPending}
-                disabled={
-                  isLoading ||
-                  installOrUninstallPending ||
-                  serviceControlPending
-                }
+                onClick={handleInstallClick}
+                loading={installOrUninstallPending}
+                disabled={isLoading || installOrUninstallPending}
               >
-                {getControlButtonString()}
+                {getInstallButtonString()}
               </Button>
             )}
-
-            <Button
-              variant="contained"
-              onClick={handleInstallClick}
-              loading={installOrUninstallPending}
-              disabled={
-                isLoading || installOrUninstallPending || serviceControlPending
-              }
-            >
-              {getInstallButtonString()}
-            </Button>
 
             {import.meta.env.DEV && (
               <Button
@@ -300,7 +223,7 @@ export const SettingSystemService = () => {
             }}
             variant="contained"
             disabled={
-              isLoading || installOrUninstallPending || serviceControlPending
+              isLoading || installOrUninstallPending
             }
           >
             {t('Install')}
