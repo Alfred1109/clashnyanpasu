@@ -1,12 +1,12 @@
-use std::path::PathBuf;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use std::path::PathBuf;
 
+pub mod ipc_commands;
 pub mod manager;
 pub mod operations;
 pub mod service_handler;
-pub mod ipc_commands;
 pub mod simple_service;
 
 /// 需要特权的操作类型
@@ -20,17 +20,11 @@ pub enum PrivilegedOperation {
         bypass: Vec<String>,
     },
     /// 设置TUN模式
-    SetTunMode {
-        enable: bool,
-    },
+    SetTunMode { enable: bool },
     /// 修改网络设置
-    ModifyNetworkSettings {
-        dns: Option<Vec<String>>,
-    },
+    ModifyNetworkSettings { dns: Option<Vec<String>> },
     /// 更新核心权限
-    UpdateCorePermissions {
-        core_path: PathBuf,
-    },
+    UpdateCorePermissions { core_path: PathBuf },
     /// 重置系统代理
     ResetSystemProxy,
 }
@@ -40,18 +34,19 @@ pub enum PrivilegedOperation {
 pub trait PrivilegedOperationHandler: Send + Sync {
     /// 执行特权操作
     async fn execute(&self, operation: PrivilegedOperation) -> Result<()>;
-    
+
     /// 检查处理器是否可用
     async fn is_available(&self) -> bool;
-    
+
     /// 获取处理器名称
     fn name(&self) -> &'static str;
-    
+
     /// 检查是否需要用户确认
     fn requires_confirmation(&self, operation: &PrivilegedOperation) -> bool {
         match operation {
-            PrivilegedOperation::SetSystemProxy { .. } | 
-            PrivilegedOperation::SetTunMode { .. } => false,
+            PrivilegedOperation::SetSystemProxy { .. } | PrivilegedOperation::SetTunMode { .. } => {
+                false
+            }
             _ => true,
         }
     }

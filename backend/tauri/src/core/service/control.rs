@@ -58,8 +58,8 @@ pub async fn install_service() -> anyhow::Result<()> {
         {
             RunasCommand::new(SERVICE_PATH.as_path())
                 .args(&args)
-                .gui(true)
-                .show(true)
+                .gui(false)
+                .show(false)
                 .status()
         }
         #[cfg(target_os = "macos")]
@@ -106,8 +106,8 @@ pub async fn update_service() -> anyhow::Result<()> {
         {
             RunasCommand::new(SERVICE_PATH.as_path())
                 .args(ARGS)
-                .gui(true)
-                .show(true)
+                .gui(false)
+                .show(false)
                 .status()
         }
         #[cfg(target_os = "macos")]
@@ -149,8 +149,8 @@ pub async fn uninstall_service() -> anyhow::Result<()> {
         {
             RunasCommand::new(SERVICE_PATH.as_path())
                 .args(ARGS)
-                .gui(true)
-                .show(true)
+                .gui(false)
+                .show(false)
                 .status()
         }
         #[cfg(target_os = "macos")]
@@ -196,16 +196,16 @@ pub async fn start_service() -> anyhow::Result<()> {
                 RunasCommand::new("/bin/sh")
                     .arg("-c")
                     .arg(cmd)
-                    .gui(true)
-                    .show(true)
+                    .gui(false)
+                    .show(false)
                     .status()
             };
 
             #[cfg(not(all(unix, not(target_os = "macos"))))]
             let status = RunasCommand::new(SERVICE_PATH.as_path())
                 .args(&["start"])
-                .gui(true)
-                .show(true)
+                .gui(false)
+                .show(false)
                 .status();
 
             status
@@ -253,8 +253,8 @@ pub async fn stop_service() -> anyhow::Result<()> {
         {
             RunasCommand::new(SERVICE_PATH.as_path())
                 .args(ARGS)
-                .gui(true)
-                .show(true)
+                .gui(false)
+                .show(false)
                 .status()
         }
         #[cfg(target_os = "macos")]
@@ -310,16 +310,16 @@ pub async fn restart_service() -> anyhow::Result<()> {
                 RunasCommand::new("/bin/sh")
                     .arg("-c")
                     .arg(cmd)
-                    .gui(true)
-                    .show(true)
+                    .gui(false)
+                    .show(false)
                     .status()
             };
 
             #[cfg(not(all(unix, not(target_os = "macos"))))]
             let status = RunasCommand::new(SERVICE_PATH.as_path())
                 .args(&["restart"])
-                .gui(true)
-                .show(true)
+                .gui(false)
+                .show(false)
                 .status();
 
             status

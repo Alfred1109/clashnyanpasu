@@ -485,14 +485,16 @@ pub async fn patch_verge_config(payload: IVerge) -> Result {
 #[tauri::command]
 #[specta::specta]
 pub async fn toggle_system_proxy() -> Result<crate::core::privilege::PrivilegedOperationResult> {
-    use crate::core::privilege::{PrivilegedOperation, manager::PrivilegeManager};
-    use crate::config::Config;
+    use crate::{
+        config::Config,
+        core::privilege::{PrivilegedOperation, manager::PrivilegeManager},
+    };
 
     let current_enable = Config::verge()
         .latest()
         .enable_system_proxy
         .unwrap_or(false);
-    
+
     let operation = PrivilegedOperation::SetSystemProxy {
         enable: !current_enable,
         port: Config::verge()
@@ -520,14 +522,13 @@ pub async fn toggle_system_proxy() -> Result<crate::core::privilege::PrivilegedO
 #[tauri::command]
 #[specta::specta]
 pub async fn toggle_tun_mode() -> Result<crate::core::privilege::PrivilegedOperationResult> {
-    use crate::core::privilege::{PrivilegedOperation, manager::PrivilegeManager};
-    use crate::config::Config;
+    use crate::{
+        config::Config,
+        core::privilege::{PrivilegedOperation, manager::PrivilegeManager},
+    };
 
-    let current_enable = Config::verge()
-        .latest()
-        .enable_tun_mode
-        .unwrap_or(false);
-    
+    let current_enable = Config::verge().latest().enable_tun_mode.unwrap_or(false);
+
     let operation = PrivilegedOperation::SetTunMode {
         enable: !current_enable,
     };
@@ -1086,82 +1087,7 @@ pub async fn is_tray_icon_set(mode: TrayIcon) -> Result<bool> {
     Ok(tokio::fs::metadata(icon_path).await.is_ok())
 }
 
-pub mod service {
-    use super::Result;
-    use crate::core::service;
-
-    #[tauri::command]
-    #[specta::specta]
-    pub async fn status_service<'a>() -> Result<nyanpasu_ipc::types::StatusInfo<'a>> {
-        let res = (service::control::status().await)?;
-        Ok(res)
-    }
-
-    #[tauri::command]
-    #[specta::specta]
-    pub async fn install_service() -> Result {
-        (service::control::install_service().await)?;
-        Ok(())
-    }
-
-    #[tauri::command]
-    #[specta::specta]
-    pub async fn uninstall_service() -> Result {
-        (service::control::uninstall_service().await)?;
-        Ok(())
-    }
-
-    #[tauri::command]
-    #[specta::specta]
-    pub async fn start_service() -> Result {
-        let res = service::control::start_service().await;
-        let enabled_service = {
-            *crate::config::Config::verge()
-                .latest()
-                .enable_service_mode
-                .as_ref()
-                .unwrap_or(&false)
-        };
-        if enabled_service && let Err(e) = crate::core::CoreManager::global().run_core().await {
-            log::error!(target: "app", "{e}");
-        }
-        Ok(res?)
-    }
-
-    #[tauri::command]
-    #[specta::specta]
-    pub async fn stop_service() -> Result {
-        let res = service::control::stop_service().await;
-        let enabled_service = {
-            *crate::config::Config::verge()
-                .latest()
-                .enable_service_mode
-                .as_ref()
-                .unwrap_or(&false)
-        };
-        if enabled_service && let Err(e) = crate::core::CoreManager::global().run_core().await {
-            log::error!(target: "app", "{e}");
-        }
-        Ok(res?)
-    }
-
-    #[tauri::command]
-    #[specta::specta]
-    pub async fn restart_service() -> Result {
-        let res = service::control::restart_service().await;
-        let enabled_service = {
-            *crate::config::Config::verge()
-                .latest()
-                .enable_service_mode
-                .as_ref()
-                .unwrap_or(&false)
-        };
-        if enabled_service && let Err(e) = crate::core::CoreManager::global().run_core().await {
-            log::error!(target: "app", "{e}");
-        }
-        Ok(res?)
-    }
-}
+// 旧的服务管理模块已被简化的 simple_service 模块替代
 
 #[cfg(not(windows))]
 pub mod uwp {

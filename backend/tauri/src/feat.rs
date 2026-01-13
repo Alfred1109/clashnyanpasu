@@ -159,7 +159,7 @@ pub fn disable_system_proxy() {
     });
 }
 
-// 切换tun模式 - 使用新的权限管理系统  
+// 切换tun模式 - 使用新的权限管理系统
 pub fn toggle_tun_mode() {
     tauri::async_runtime::spawn(async move {
         // 使用新的权限管理系统进行智能TUN操作
