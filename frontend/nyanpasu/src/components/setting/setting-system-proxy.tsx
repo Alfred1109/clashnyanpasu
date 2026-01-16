@@ -660,21 +660,24 @@ export const SettingSystemProxy = () => {
           </ListItem>
         )}
 
-        {query.data?.status === 'stopped' && (
-          <ListItem sx={{ pl: 0, pr: 0 }}>
-            <div className="ml-auto">
-              <Button
-                size="small"
-                variant="outlined"
-                color="error"
-                onClick={() => setShowUninstallDialog(true)}
-                disabled={serviceActionPending || query.isLoading}
-              >
-                {t('uninstall')}
-              </Button>
-            </div>
-          </ListItem>
-        )}
+        {isInTauri &&
+          query.data?.status === 'stopped' &&
+          !systemProxy.value &&
+          !tunMode.value && (
+            <ListItem sx={{ pl: 0, pr: 0 }}>
+              <div className="ml-auto">
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="error"
+                  onClick={() => setShowUninstallDialog(true)}
+                  disabled={serviceActionPending || query.isLoading}
+                >
+                  {t('uninstall')}
+                </Button>
+              </div>
+            </ListItem>
+          )}
       </List>
 
       <Dialog
