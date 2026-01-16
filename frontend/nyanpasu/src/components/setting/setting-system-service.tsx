@@ -1,22 +1,10 @@
 import { useMemoizedFn } from 'ahooks'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useServiceManager } from '@/hooks/use-service-manager'
 import { formatError } from '@/utils'
 import { message } from '@/utils/notification'
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  List,
-  ListItem,
-  ListItemText,
-  Typography,
-} from '@mui/material'
-import { useSetting } from '@nyanpasu/interface'
+import { Button, List, ListItem, ListItemText, Typography } from '@mui/material'
+import { startService, stopService, useSetting } from '@nyanpasu/interface'
 import { BaseCard, SwitchItem } from '@nyanpasu/ui'
 import { ServiceInstallDialog } from './modules/service-install-dialog'
 import {
@@ -32,113 +20,147 @@ export const SettingSystemService = () => {
   const serviceMode = useSetting('enable_service_mode')
   const promptDialog = useServerManualPromptDialog()
 
-  const [showInstallDialog, setShowInstallDialog] = useState(false)
-  const [installAction, setInstallAction] = useState<
-    'enable_service_mode' | 'start_service'
-  >('enable_service_mode')
+  const getServiceActionButtons = () => {
+    const buttons = []
 
-  const getInstallButtonString = () => {
+    // Debug log to see actual status value
+    console.log(
+      'Service status for buttons:',
+      serviceManager.serviceStatus,
+      typeof serviceManager.serviceStatus,
+    )
+
     switch (serviceManager.serviceStatus) {
-      case 'stopped': {
-        return t('uninstall')
+      case 'not_installed': {
+        buttons.push({
+          key: 'install',
+          label: t('install'),
+          action: 'install',
+          variant: 'contained' as const,
+        })
+        break
       }
 
-      case 'not_installed': {
-        return t('install')
+      case 'stopped': {
+        buttons.push({
+          key: 'start',
+          label: t('start'),
+          action: 'start',
+          variant: 'contained' as const,
+        })
+        buttons.push({
+          key: 'uninstall',
+          label: t('uninstall'),
+          action: 'uninstall',
+          variant: 'outlined' as const,
+        })
+        break
+      }
+
+      case 'running': {
+        buttons.push({
+          key: 'stop',
+          label: t('stop'),
+          action: 'stop',
+          variant: 'contained' as const,
+        })
+        break
       }
 
       default: {
-        return t('install')
+        console.log('Unknown service status, adding debug install button')
+        // 添加一个调试按钮，以防状态值不匹配
+        buttons.push({
+          key: 'install',
+          label: t('install'),
+          action: 'install',
+          variant: 'contained' as const,
+        })
+        break
       }
     }
+
+    return buttons
   }
 
-  const isDisabled = serviceManager.serviceStatus === 'not_installed'
-
-  const handleInstallClick = useMemoizedFn(async () => {
+  const handleServiceAction = useMemoizedFn(async (action: string) => {
     try {
-      const isInstall = serviceManager.serviceStatus === 'not_installed'
-
-      if (isInstall) {
-        // 安装服务
-        await serviceManager.installService()
-
-        message(t('Service installed successfully'), {
-          kind: 'info',
-          title: t('Success'),
-        })
-      } else {
-        // 卸载服务
-        await serviceManager.uninstallService()
-
-        message(t('Service uninstalled successfully'), {
-          kind: 'info',
-          title: t('Success'),
-        })
-      }
-    } catch (e) {
-      const errorMessage = `${
-        serviceManager.serviceStatus === 'not_installed'
-          ? t('Failed to install')
-          : t('Failed to uninstall')
-      }: ${formatError(e)}`
-
-      message(errorMessage, {
-        kind: 'error',
-        title: t('Error'),
-      })
-
-      // 如果安装/卸载失败，提示用户手动操作
-      promptDialog.show(
-        serviceManager.serviceStatus === 'not_installed'
-          ? 'install'
-          : 'uninstall',
-      )
-    }
-  })
-
-  const handleInstallForAction = useMemoizedFn(async () => {
-    try {
-      // 安装服务
-      const success = await serviceManager.installService({
-        autoStart: installAction === 'enable_service_mode',
-      })
-
-      if (!success) {
-        return
-      }
-
-      // 如果需要启用服务模式
-      if (installAction === 'enable_service_mode') {
-        try {
-          await serviceMode.upsert(true)
-          message(t('Service mode enabled successfully'), {
+      switch (action) {
+        case 'install':
+          await serviceManager.installService()
+          message(t('Service installed successfully'), {
             kind: 'info',
             title: t('Success'),
           })
-        } catch (e) {
-          message(`${t('Failed to enable service mode')}: ${formatError(e)}`, {
-            kind: 'error',
-            title: t('Error'),
+          break
+
+        case 'uninstall':
+          await serviceManager.uninstallService()
+          message(t('Service uninstalled successfully'), {
+            kind: 'info',
+            title: t('Success'),
           })
-        }
+          break
+
+        case 'start':
+          await startService()
+          await serviceManager.query.refetch()
+          message(t('Service started successfully'), {
+            kind: 'info',
+            title: t('Success'),
+          })
+          break
+
+        case 'stop':
+          await stopService()
+          await serviceManager.query.refetch()
+          message(t('Service stopped successfully'), {
+            kind: 'info',
+            title: t('Success'),
+          })
+          break
+
+        default:
+          break
       }
     } catch (e) {
-      const errorMessage = `${t('Failed to install')}: ${formatError(e)}`
+      const actionName =
+        {
+          install: t('Failed to install'),
+          uninstall: t('Failed to uninstall'),
+          start: t('Failed to start'),
+          stop: t('Failed to stop'),
+        }[action] || t('Operation failed')
+
+      const errorMessage = `${actionName}: ${formatError(e)}`
+
       message(errorMessage, {
         kind: 'error',
         title: t('Error'),
       })
-      promptDialog.show('install')
+
+      // 如果操作失败，提示用户手动操作
+      if (action === 'install' || action === 'uninstall') {
+        promptDialog.show(action as 'install' | 'uninstall')
+      }
     }
   })
 
   const handleServiceModeToggle = useMemoizedFn(() => {
-    if (!serviceMode.value && isDisabled) {
-      setInstallAction('enable_service_mode')
-      setShowInstallDialog(true)
+    // 检查服务状态
+    if (serviceManager.serviceStatus !== 'running') {
+      const statusMessage =
+        serviceManager.serviceStatus === 'not_installed'
+          ? t('Service not installed, please install the system service first')
+          : t('Service not running, please start the system service first')
+
+      message(statusMessage, {
+        title: t('Service Mode'),
+        kind: 'warning',
+      })
       return
     }
+
     serviceMode.upsert(!serviceMode.value)
   })
 
@@ -162,12 +184,16 @@ export const SettingSystemService = () => {
           onChange={handleServiceModeToggle}
         />
 
-        {isDisabled && (
+        {serviceManager.serviceStatus !== 'running' && (
           <ListItem sx={{ pl: 0, pr: 0 }}>
             <Typography>
-              {t(
-                'Information: To enable service mode, make sure the Clash Nyanpasu service is installed and started',
-              )}
+              {serviceManager.serviceStatus === 'not_installed'
+                ? t(
+                    'Service not installed, please install the system service first to enable service mode',
+                  )
+                : t(
+                    'Service not running, please start the system service first to enable service mode',
+                  )}
             </Typography>
           </ListItem>
         )}
@@ -179,16 +205,16 @@ export const SettingSystemService = () => {
             })}
           />
           <div className="flex gap-2">
-            {(serviceManager.serviceStatus === 'not_installed' ||
-              serviceManager.serviceStatus === 'stopped') && (
+            {getServiceActionButtons().map((button) => (
               <Button
-                variant="contained"
-                onClick={handleInstallClick}
+                key={button.key}
+                variant={button.variant}
+                onClick={() => handleServiceAction(button.action)}
                 disabled={serviceManager.isInstalling}
               >
-                {getInstallButtonString()}
+                {button.label}
               </Button>
-            )}
+            ))}
 
             {import.meta.env.DEV && (
               <Button
@@ -201,38 +227,6 @@ export const SettingSystemService = () => {
           </div>
         </ListItem>
       </List>
-
-      {/* 安装确认 Dialog */}
-      <Dialog
-        open={showInstallDialog}
-        onClose={() => setShowInstallDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>{t('Install system service')}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {t(
-              'The system service is not installed. Do you want to install it now to enable service mode?',
-            )}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowInstallDialog(false)}>
-            {t('Cancel')}
-          </Button>
-          <Button
-            onClick={() => {
-              setShowInstallDialog(false)
-              handleInstallForAction()
-            }}
-            variant="contained"
-            disabled={serviceManager.isInstalling}
-          >
-            {t('Install')}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </BaseCard>
   )
 }

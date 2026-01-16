@@ -1,5 +1,5 @@
 import { useMemoizedFn } from 'ahooks'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   CloseRounded,
   CropSquareRounded,
@@ -14,16 +14,44 @@ import { alpha, cn } from '@nyanpasu/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { listen, TauriEvent, UnlistenFn } from '@tauri-apps/api/event'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { platform as getPlatform } from '@tauri-apps/plugin-os'
 
 // Check if we're in Tauri environment before calling Tauri APIs
 const isInTauri = typeof window !== 'undefined' && '__TAURI__' in window
-const appWindow = isInTauri ? getCurrentWebviewWindow() : null
+
+// Get app window instance, but don't let it be null in Tauri environment
+let appWindow: ReturnType<typeof getCurrentWebviewWindow> | null = null
+if (isInTauri) {
+  try {
+    appWindow = getCurrentWebviewWindow()
+    console.log('App window initialized:', !!appWindow)
+  } catch (error) {
+    console.warn('Failed to get current webview window:', error)
+  }
+}
+
+// Safe platform detection function
+const getSafePlatform = async (): Promise<string> => {
+  if (!isInTauri) {
+    // Browser fallback - detect from user agent
+    const ua = navigator.userAgent.toLowerCase()
+    if (ua.includes('win')) return 'windows'
+    if (ua.includes('mac')) return 'macos'
+    if (ua.includes('linux')) return 'linux'
+    return 'unknown'
+  }
+
+  try {
+    const { platform } = await import('@tauri-apps/plugin-os')
+    return platform() || 'unknown'
+  } catch {
+    return 'unknown'
+  }
+}
 
 const CtrlButton = (props: ButtonProps) => {
   return (
     <Button
-      className="!size-8 !min-w-0"
+      className="size-8! min-w-0!"
       sx={(theme) => ({
         backgroundColor: alpha(theme.vars.palette.primary.main, 0.1),
         svg: { transform: 'scale(0.9)' },
@@ -35,23 +63,42 @@ const CtrlButton = (props: ButtonProps) => {
 
 export const LayoutControl = ({ className }: { className?: string }) => {
   const { value: alwaysOnTop, upsert } = useSetting('always_on_top')
+  const [currentAppWindow, setCurrentAppWindow] = useState<ReturnType<
+    typeof getCurrentWebviewWindow
+  > | null>(appWindow)
 
   const { data: isMaximized = false } = useQuery({
     queryKey: ['isMaximized'],
     queryFn: async () => {
-      if (!appWindow) return false
-      return appWindow.isMaximized()
+      if (!currentAppWindow) return false
+      return currentAppWindow.isMaximized()
     },
-    enabled: !!appWindow,
+    enabled: !!currentAppWindow,
     initialData: false,
   })
 
   const queryClient = useQueryClient()
   const unlistenRef = useRef<UnlistenFn | null>(null)
-  const platform = useRef(getPlatform())
+  const [platform, setPlatform] = useState<string>('unknown')
 
   useEffect(() => {
-    if (!appWindow) return
+    // Initialize platform detection
+    getSafePlatform().then(setPlatform)
+
+    // Try to initialize window in useEffect for better timing
+    if (isInTauri && !currentAppWindow) {
+      try {
+        const window = getCurrentWebviewWindow()
+        setCurrentAppWindow(window)
+        console.log('Window initialized in useEffect:', !!window)
+      } catch (error) {
+        console.warn('Failed to get window in useEffect:', error)
+      }
+    }
+  }, [currentAppWindow])
+
+  useEffect(() => {
+    if (!currentAppWindow) return
 
     listen(TauriEvent.WINDOW_RESIZED, () => {
       queryClient.invalidateQueries({ queryKey: ['isMaximized'] })
@@ -62,12 +109,15 @@ export const LayoutControl = ({ className }: { className?: string }) => {
       .catch((error) => {
         console.error(error)
       })
-  }, [queryClient])
+    return () => {
+      unlistenRef.current?.()
+    }
+  }, [queryClient, currentAppWindow])
 
   const toggleAlwaysOnTop = useMemoizedFn(async () => {
-    if (!appWindow) return
+    if (!currentAppWindow) return
     await upsert(!alwaysOnTop)
-    await appWindow.setAlwaysOnTop(!alwaysOnTop)
+    await currentAppWindow.setAlwaysOnTop(!alwaysOnTop)
   })
 
   return (
@@ -83,14 +133,17 @@ export const LayoutControl = ({ className }: { className?: string }) => {
         )}
       </CtrlButton>
 
-      <CtrlButton disabled={!appWindow} onClick={() => appWindow?.minimize()}>
+      <CtrlButton
+        disabled={!isInTauri || !currentAppWindow}
+        onClick={() => currentAppWindow?.minimize()}
+      >
         <HorizontalRuleRounded fontSize="small" />
       </CtrlButton>
 
       <CtrlButton
-        disabled={!appWindow}
+        disabled={!isInTauri || !currentAppWindow}
         onClick={() => {
-          appWindow?.toggleMaximize().then(() => {
+          currentAppWindow?.toggleMaximize().then(() => {
             queryClient.invalidateQueries({ queryKey: ['isMaximized'] })
           })
         }}
@@ -108,15 +161,15 @@ export const LayoutControl = ({ className }: { className?: string }) => {
       </CtrlButton>
 
       <CtrlButton
-        disabled={!appWindow}
+        disabled={!isInTauri || !currentAppWindow}
         onClick={() => {
-          if (!appWindow) return
-          if (platform.current === 'windows') {
+          if (!currentAppWindow) return
+          if (platform === 'windows') {
             saveWindowSizeState().finally(() => {
-              appWindow.close()
+              currentAppWindow.close()
             })
           } else {
-            appWindow.close()
+            currentAppWindow.close()
           }
         }}
       >

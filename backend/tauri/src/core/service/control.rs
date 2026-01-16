@@ -62,6 +62,32 @@ fn run_elevated(
     args: &[OsString],
     show: bool,
 ) -> Result<std::process::ExitStatus, std::io::Error> {
+    use std::{os::windows::process::CommandExt, process::Command};
+
+    // 首先尝试直接运行，如果失败则提权
+    let mut cmd = Command::new(program);
+    cmd.args(args);
+
+    match cmd.status() {
+        Ok(status) if status.success() => {
+            tracing::info!("Service operation completed without elevation");
+            return Ok(status);
+        }
+        Ok(status) => {
+            tracing::warn!(
+                "Service operation failed, trying with elevation. Exit code: {:?}",
+                status.code()
+            );
+        }
+        Err(e) => {
+            tracing::warn!(
+                "Service operation failed, trying with elevation. Error: {}",
+                e
+            );
+        }
+    }
+
+    // 需要提权时，使用UAC
     let program_wide: Vec<u16> = OsStr::new(program).encode_wide().chain(Some(0)).collect();
     let args_str = args
         .iter()
@@ -69,6 +95,8 @@ fn run_elevated(
         .collect::<Vec<_>>()
         .join(" ");
     let args_wide: Vec<u16> = OsStr::new(&args_str).encode_wide().chain(Some(0)).collect();
+
+    tracing::info!("Requesting administrator privileges for service installation...");
 
     let result = unsafe {
         ShellExecuteW(
@@ -90,11 +118,23 @@ fn run_elevated(
     };
 
     if result as usize > 32 {
-        // ShellExecuteW returns a handle > 32 on success
-        // Since we can't easily wait for the process, return success
+        tracing::info!("UAC elevation prompt launched successfully");
         Ok(std::process::ExitStatus::from_raw(0))
     } else {
-        Err(std::io::Error::from_raw_os_error(result as i32))
+        let error_code = result as i32;
+        tracing::error!("UAC elevation failed with error code: {}", error_code);
+
+        // 常见的UAC错误码
+        match error_code {
+            1223 => {
+                // 用户取消了UAC提示
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    "User cancelled the UAC elevation prompt",
+                ))
+            }
+            _ => Err(std::io::Error::from_raw_os_error(error_code)),
+        }
     }
 }
 

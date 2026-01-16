@@ -37,15 +37,11 @@ import {
 } from './modules/service-manual-prompt-dialog'
 import { PaperSwitchButton } from './modules/system-proxy'
 
-type ModeAction = 'system_proxy' | 'tun'
-
 const TunModeButton = ({
   serviceStatus,
-  onRequireInstall,
   disabled,
 }: {
   serviceStatus?: string
-  onRequireInstall: (action: ModeAction) => void
   disabled?: boolean
 }) => {
   const { t } = useTranslation()
@@ -53,8 +49,18 @@ const TunModeButton = ({
   const tunMode = useSetting('enable_tun_mode')
 
   const handleTunMode = useLockFn(async () => {
-    if (!tunMode.value && serviceStatus === 'not_installed') {
-      onRequireInstall('tun')
+    console.log('TUN Mode clicked, serviceStatus:', serviceStatus)
+    // 检查服务状态
+    if (serviceStatus !== 'running') {
+      const statusMessage =
+        serviceStatus === 'not_installed'
+          ? t('Service not installed, please install the system service first')
+          : t('Service not running, please start the system service first')
+
+      message(statusMessage, {
+        title: t('TUN Mode'),
+        kind: 'warning',
+      })
       return
     }
 
@@ -68,23 +74,24 @@ const TunModeButton = ({
     }
   })
 
+  // 当服务未运行时显示不同的视觉状态，但不禁用按钮
+  const isDisabled = disabled
+
   return (
     <PaperSwitchButton
       label={t('TUN Mode')}
       checked={Boolean(tunMode.value)}
       onClick={handleTunMode}
-      disabled={disabled}
+      disabled={isDisabled}
     />
   )
 }
 
 const SystemProxyButton = ({
   serviceStatus,
-  onRequireInstall,
   disabled,
 }: {
   serviceStatus?: string
-  onRequireInstall: (action: ModeAction) => void
   disabled?: boolean
 }) => {
   const { t } = useTranslation()
@@ -92,10 +99,20 @@ const SystemProxyButton = ({
   const systemProxy = useSetting('enable_system_proxy')
 
   const handleSystemProxy = useLockFn(async () => {
-    if (!systemProxy.value && serviceStatus === 'not_installed') {
-      onRequireInstall('system_proxy')
+    // 检查服务状态
+    if (serviceStatus !== 'running') {
+      const statusMessage =
+        serviceStatus === 'not_installed'
+          ? t('Service not installed, please install the system service first')
+          : t('Service not running, please start the system service first')
+
+      message(statusMessage, {
+        title: t('System Proxy'),
+        kind: 'warning',
+      })
       return
     }
+
     try {
       await toggleSystemProxy()
     } catch (error) {
@@ -106,12 +123,15 @@ const SystemProxyButton = ({
     }
   })
 
+  // 当服务未运行时显示不同的视觉状态，但不禁用按钮
+  const isDisabled = disabled
+
   return (
     <PaperSwitchButton
       label={t('System Proxy')}
       checked={Boolean(systemProxy.value)}
       onClick={handleSystemProxy}
-      disabled={disabled}
+      disabled={isDisabled}
     />
   )
 }
@@ -234,9 +254,6 @@ export const SettingSystemProxy = () => {
 
   const [showInstallDialog, setShowInstallDialog] = useState(false)
   const [showUninstallDialog, setShowUninstallDialog] = useState(false)
-  const [pendingModeAction, setPendingModeAction] = useState<ModeAction | null>(
-    null,
-  )
 
   const getStatusColor = () => {
     switch (serviceManager.serviceStatus) {
@@ -274,30 +291,13 @@ export const SettingSystemProxy = () => {
     }
   }
 
-  const handleRequireInstall = (action: ModeAction) => {
-    setPendingModeAction(action)
-    setShowInstallDialog(true)
-  }
-
   const handleInstallConfirm = useLockFn(async () => {
     setShowInstallDialog(false)
 
     try {
-      // 使用统一的服务安装流程
+      // 使用统一的服务安装流程，仅安装和启动服务，不自动配置模式
       await serviceManager.installService({
         autoStart: true,
-        onConfigureProxy:
-          pendingModeAction === 'system_proxy'
-            ? async () => {
-                await toggleSystemProxy()
-              }
-            : undefined,
-        onConfigureTun:
-          pendingModeAction === 'tun'
-            ? async () => {
-                await toggleTunMode()
-              }
-            : undefined,
       })
 
       message(t('Service installed successfully'), {
@@ -321,8 +321,6 @@ export const SettingSystemProxy = () => {
         )
         promptDialog.show('install')
       }
-    } finally {
-      setPendingModeAction(null)
     }
   })
 
@@ -374,7 +372,6 @@ export const SettingSystemProxy = () => {
         <Grid size={{ xs: 6 }}>
           <SystemProxyButton
             serviceStatus={serviceManager.serviceStatus}
-            onRequireInstall={handleRequireInstall}
             disabled={!isInTauri || serviceManager.isInstalling}
           />
         </Grid>
@@ -382,7 +379,6 @@ export const SettingSystemProxy = () => {
         <Grid size={{ xs: 6 }}>
           <TunModeButton
             serviceStatus={serviceManager.serviceStatus}
-            onRequireInstall={handleRequireInstall}
             disabled={!isInTauri || serviceManager.isInstalling}
           />
         </Grid>
@@ -419,7 +415,6 @@ export const SettingSystemProxy = () => {
                 size="small"
                 variant="outlined"
                 onClick={() => {
-                  setPendingModeAction(null)
                   setShowInstallDialog(true)
                 }}
                 disabled={serviceManager.isInstalling}

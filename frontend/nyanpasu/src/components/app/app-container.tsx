@@ -81,7 +81,7 @@ export const AppContainer = ({
       )}
 
       <div className={styles.container}>
-        {OS === 'windows' && appWindow && (
+        {OS === 'windows' && (
           <LayoutControl className="z-top! fixed top-2 right-4" />
         )}
         <AnimatePresence>

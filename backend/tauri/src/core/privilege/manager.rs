@@ -61,7 +61,7 @@ impl PrivilegeManager {
             return self.handle_disable_operation(operation).await;
         }
 
-        // 启用操作：确保服务可用
+        // 启用操作：检查服务状态
         if let Some(service_handler) = &self.service_handler {
             if service_handler.is_available().await {
                 // 服务已运行，直接执行
@@ -83,45 +83,13 @@ impl PrivilegeManager {
             }
         }
 
-        // 服务未运行，自动启动服务
-        info!("系统代理/TUN模式需要服务，正在自动启动服务...");
-
-        match self.auto_setup_service().await {
-            Ok(()) => {
-                info!("服务启动成功，执行操作");
-                // 重新尝试执行
-                if let Some(service_handler) = &self.service_handler {
-                    if service_handler.is_available().await {
-                        return match service_handler.execute(operation).await {
-                            Ok(()) => Ok(PrivilegedOperationResult {
-                                success: true,
-                                message: Some("服务已自动启动".to_string()),
-                                handler_used: service_handler.name().to_string(),
-                            }),
-                            Err(e) => Ok(PrivilegedOperationResult {
-                                success: false,
-                                message: Some(format!("服务启动成功但操作失败: {}", e)),
-                                handler_used: service_handler.name().to_string(),
-                            }),
-                        };
-                    }
-                }
-
-                Ok(PrivilegedOperationResult {
-                    success: false,
-                    message: Some("服务启动后仍不可用".to_string()),
-                    handler_used: "service_auto_start".to_string(),
-                })
-            }
-            Err(e) => {
-                error!("服务自动启动失败: {}", e);
-                Ok(PrivilegedOperationResult {
-                    success: false,
-                    message: Some(format!("服务启动失败: {}。请手动安装服务或检查权限。", e)),
-                    handler_used: "service_auto_start_failed".to_string(),
-                })
-            }
-        }
+        // 服务未运行，返回错误提示用户先启动服务
+        warn!("服务未启动，无法执行操作");
+        Ok(PrivilegedOperationResult {
+            success: false,
+            message: Some("服务未启动，请先启动服务后再试".to_string()),
+            handler_used: "service_not_running".to_string(),
+        })
     }
 
     /// 处理关闭操作并管理服务生命周期

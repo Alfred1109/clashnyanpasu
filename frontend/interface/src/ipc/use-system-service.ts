@@ -27,28 +27,60 @@ export const useSystemService = () => {
     enabled: isInTauri || isBrowser,
     queryFn: async () => {
       if (!isInTauri) {
-        const res = await fetch('/__local_api/service/status', {
-          cache: 'no-store',
-        })
-        if (!res.ok) {
-          throw new Error(`local api failed: ${res.status}`)
-        }
-        const data = (await res.json()) as {
-          status?: 'running' | 'stopped' | 'not_installed'
-          version?: string
-        }
-        const status = data.status ?? 'not_installed'
-        return {
-          name: '',
-          version: data.version ?? '',
-          status: status as any,
-          server: null,
+        try {
+          const res = await fetch('/__local_api/service/status', {
+            cache: 'no-store',
+          })
+          if (!res.ok) {
+            console.warn(`Local API failed with status: ${res.status}`)
+            return {
+              name: '',
+              version: '',
+              status: 'not_installed' as const,
+              server: null,
+            }
+          }
+          const data = (await res.json()) as {
+            status?: 'running' | 'stopped' | 'not_installed'
+            version?: string
+          }
+          const status = data.status ?? 'not_installed'
+          return {
+            name: '',
+            version: data.version ?? '',
+            status: status as any,
+            server: null,
+          }
+        } catch (error) {
+          console.warn(
+            'Failed to query local API, treating as not_installed:',
+            error,
+          )
+          return {
+            name: '',
+            version: '',
+            status: 'not_installed' as const,
+            server: null,
+          }
         }
       }
+
       try {
-        return unwrap(await commands.serviceStatus())
+        const result = await commands.serviceStatus()
+        if (result.status === 'error') {
+          console.warn('Service status command returned error:', result.error)
+          return {
+            name: '',
+            version: '',
+            status: 'not_installed' as const,
+            server: null,
+          }
+        }
+        return result.data
       } catch (error) {
+        console.warn('Service status command failed:', error)
         const message = String(error).toLowerCase()
+
         // 扩大匹配范围，涵盖更多服务不可用的情况
         const isNotInstalled =
           message.includes('executable not found') ||
@@ -58,24 +90,11 @@ export const useSystemService = () => {
           message.includes('找不到') ||
           message.includes('不存在') ||
           message.includes('failed to execute') ||
-          message.includes('no such file')
+          message.includes('no such file') ||
+          message.includes('command') ||
+          message.includes('invoke')
 
-        if (isNotInstalled) {
-          console.debug('Service appears not installed:', message)
-          return {
-            name: '',
-            version: '',
-            status: 'not_installed' as const,
-            server: null,
-          }
-        }
-
-        // 对于其他错误，也返回 not_installed 状态而不是抛出错误
-        // 这样可以避免 UI 进入 error 状态导致按钮完全不可用
-        console.warn(
-          'Failed to query service status, treating as not_installed:',
-          error,
-        )
+        console.debug('Service appears not installed:', message)
         return {
           name: '',
           version: '',
@@ -85,9 +104,10 @@ export const useSystemService = () => {
       }
     },
     refetchInterval: 5000,
-    // 添加重试配置，避免临时错误导致长时间不可用
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    // 禁用重试，避免重复错误日志
+    retry: false,
+    // 确保即使查询失败也不会进入error状态
+    throwOnError: false,
   })
 
   const upsert = useMutation({
