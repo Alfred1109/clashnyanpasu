@@ -165,7 +165,6 @@ impl Tray {
         }
         menu = menu
             .separator()
-            .check("system_proxy", t!("tray.system_proxy"))
             .check("tun_mode", t!("tray.tun_mode"))
             .separator()
             .text("copy_env_sh", t!("tray.copy_env.sh"))
@@ -338,9 +337,13 @@ impl Tray {
 
         #[cfg(any(target_os = "windows", target_os = "linux"))]
         {
-            // Simplified icon handling in extreme cleanup - use default icon
-            let default_icon = include_bytes!("../../../icons/icon.ico");
-            let _ = tray.set_icon(Some(tauri::image::Image::from_bytes(default_icon)?));
+            // Dynamic tray icon based on TUN mode status
+            let icon_image = if tun_mode {
+                tauri::image::Image::from_bytes(include_bytes!("../../../icons/win-tray-icon-blue.png"))?
+            } else {
+                tauri::image::Image::from_bytes(include_bytes!("../../../icons/win-tray-icon-pink.png"))?
+            };
+            let _ = tray.set_icon(Some(icon_image));
         }
 
         let _ = menu

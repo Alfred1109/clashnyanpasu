@@ -20,7 +20,6 @@ export * from './use-proxy-mode'
 export * from './use-runtime-profile'
 export * from './use-settings'
 export * from './use-system-proxy'
-export * from './use-system-service'
 
 export { commands } from './bindings'
 export type * from './bindings'

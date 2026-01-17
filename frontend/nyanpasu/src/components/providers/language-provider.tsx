@@ -1,11 +1,13 @@
 import { createContext, PropsWithChildren, useContext } from 'react'
 import { useLockFn } from '@/hooks/use-lock-fn'
-import { getLocale, Locale, setLocale } from '@/paraglide/runtime'
 import { useSetting } from '@nyanpasu/interface'
+import { useTranslation } from 'react-i18next'
+
+type Language = 'zh-CN'
 
 const LanguageContext = createContext<{
-  language?: Locale
-  setLanguage: (value: Locale) => Promise<void>
+  language?: Language
+  setLanguage: (value: Language) => Promise<void>
 } | null>(null)
 
 export const useLanguage = () => {
@@ -20,16 +22,18 @@ export const useLanguage = () => {
 
 export const LanguageProvider = ({ children }: PropsWithChildren) => {
   const language = useSetting('language')
+  const { i18n } = useTranslation()
 
-  const setLanguage = useLockFn(async (value: Locale) => {
+  const setLanguage = useLockFn(async (value: Language) => {
     await language.upsert(value)
-    setLocale(value)
+    // 由于只有中文，无需动态切换
+    await i18n.changeLanguage('zh-CN')
   })
 
   return (
     <LanguageContext.Provider
       value={{
-        language: getLocale(),
+        language: 'zh-CN', // 固定为中文
         setLanguage,
       }}
     >

@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { listen, UnlistenFn } from '@tauri-apps/api/event'
+import { IS_IN_TAURI } from '@/utils/tauri'
 
-const isInTauri = typeof window !== 'undefined' && '__TAURI__' in window
+const isInTauri = IS_IN_TAURI
 
 export const SchemeProvider = () => {
   const navigate = useNavigate()

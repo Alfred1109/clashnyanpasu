@@ -2,10 +2,11 @@ import { useAtom } from 'jotai'
 import { useEffect } from 'react'
 import { dispatchStorageValueChanged } from '@/services/storage'
 import { coreTypeAtom } from '@/store/clash'
+import { IS_IN_TAURI } from '@/utils/tauri'
 import { useSetting } from '@nyanpasu/interface'
 import { listen, UnlistenFn } from '@tauri-apps/api/event'
 
-const isInTauri = typeof window !== 'undefined' && '__TAURI__' in window
+const isInTauri = IS_IN_TAURI
 
 export function useCoreType() {
   const [coreType, setCoreType] = useAtom(coreTypeAtom)

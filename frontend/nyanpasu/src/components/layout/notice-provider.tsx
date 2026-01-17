@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { notification, NotificationType } from '@/utils/notification'
+import { IS_IN_TAURI } from '@/utils/tauri'
 import { listen, UnlistenFn } from '@tauri-apps/api/event'
 
-const isInTauri = typeof window !== 'undefined' && '__TAURI__' in window
+const isInTauri = IS_IN_TAURI
 
 export const NoticeProvider = () => {
   const { t } = useTranslation()

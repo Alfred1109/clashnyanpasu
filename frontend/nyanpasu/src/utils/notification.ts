@@ -1,5 +1,6 @@
 import { Notice } from '@/components/base'
 import { isPortable } from '@nyanpasu/interface'
+import { IS_IN_TAURI } from '@/utils/tauri'
 import {
   MessageDialogOptions,
   message as tauriMessage,
@@ -11,7 +12,7 @@ import {
   sendNotification,
 } from '@tauri-apps/plugin-notification'
 
-const isInTauri = typeof window !== 'undefined' && '__TAURI__' in window
+const isInTauri = IS_IN_TAURI
 
 let permissionGranted: boolean | null = null
 let portable: boolean | null = null

@@ -1,24 +1,23 @@
-import { useLocalStorageState } from 'ahooks'
-import { isEqual, kebabCase } from 'lodash-es'
 import {
   createContext,
   PropsWithChildren,
-  useCallback,
   useContext,
   useEffect,
+  useMemo,
 } from 'react'
 import { insertStyle } from '@/utils/styled'
+import { IS_IN_TAURI } from '@/utils/tauri'
 import {
   argbFromHex,
-  hexFromArgb,
   Theme,
   themeFromSourceColor,
 } from '@material/material-color-utilities'
-import { useSetting } from '@nyanpasu/interface'
+import { CssVarsProvider, useColorScheme } from '@mui/material/styles'
+import { createMDYTheme } from '@nyanpasu/ui'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 
 // Check if we're in Tauri environment before calling Tauri APIs
-const isInTauri = typeof window !== 'undefined' && '__TAURI__' in window
+const isInTauri = IS_IN_TAURI
 const appWindow = isInTauri ? getCurrentWebviewWindow() : null
 
 export const DEFAULT_COLOR = '#1867C0'
@@ -30,38 +29,6 @@ export enum ThemeMode {
 }
 
 const CUSTOM_THEME_KEY = 'custom-theme' as const
-
-const THEME_PALETTE_KEY = 'theme-palette-v1' as const
-const THEME_CSS_VARS_KEY = 'theme-css-vars-v1' as const
-
-const generateThemeCssVars = ({ schemes }: Theme) => {
-  let lightCssVars = ':root{'
-  let darkCssVars = ':root.dark{'
-
-  Object.entries(schemes).forEach(([mode, scheme]) => {
-    let inputScheme
-
-    // Safely convert scheme to JSON if possible, otherwise use as-is
-    if (typeof scheme.toJSON === 'function') {
-      inputScheme = scheme.toJSON()
-    } else {
-      inputScheme = scheme
-    }
-
-    Object.entries(inputScheme).forEach(([key, value]) => {
-      if (mode === 'light') {
-        lightCssVars += `--color-md-${kebabCase(key)}: ${hexFromArgb(value)};`
-      } else {
-        darkCssVars += `--color-md-${kebabCase(key)}: ${hexFromArgb(value)};`
-      }
-    })
-  })
-
-  lightCssVars += '}'
-  darkCssVars += '}'
-
-  return lightCssVars + darkCssVars
-}
 
 const changeHtmlThemeMode = (mode: Omit<ThemeMode, 'system'>) => {
   const root = document.documentElement
@@ -77,6 +44,71 @@ const changeHtmlThemeMode = (mode: Omit<ThemeMode, 'system'>) => {
   } else {
     root.classList.remove(ThemeMode.LIGHT)
   }
+}
+
+function MUIColorSchemeSync({ themeMode }: { themeMode: ThemeMode }) {
+  const { setMode } = useColorScheme()
+
+  useEffect(() => {
+    if (themeMode !== ThemeMode.SYSTEM) {
+      setMode(themeMode)
+      return
+    }
+
+    const apply = (mode: 'light' | 'dark') => {
+      changeHtmlThemeMode(mode)
+      setMode(mode)
+    }
+
+    if (appWindow) {
+      appWindow
+        .theme()
+        .then((mode) => {
+          if (mode === 'dark' || mode === 'light') {
+            apply(mode)
+          }
+        })
+        .catch(() => {})
+
+      return
+    }
+
+    const mql = window.matchMedia?.('(prefers-color-scheme: dark)')
+    if (!mql) {
+      apply('light')
+      return
+    }
+
+    apply(mql.matches ? 'dark' : 'light')
+
+    const onChange = (e: MediaQueryListEvent) => {
+      apply(e.matches ? 'dark' : 'light')
+    }
+
+    mql.addEventListener('change', onChange)
+    return () => {
+      mql.removeEventListener('change', onChange)
+    }
+  }, [setMode, themeMode])
+
+  useEffect(() => {
+    if (!appWindow) {
+      return () => {}
+    }
+
+    const unlisten = appWindow.onThemeChanged((e) => {
+      if (themeMode === ThemeMode.SYSTEM) {
+        changeHtmlThemeMode(e.payload)
+        setMode(e.payload)
+      }
+    })
+
+    return () => {
+      unlisten.then((fn) => fn())
+    }
+  }, [setMode, themeMode])
+
+  return null
 }
 
 const ThemeContext = createContext<{
@@ -101,103 +133,35 @@ export function useExperimentalThemeContext() {
 }
 
 export function ExperimentalThemeProvider({ children }: PropsWithChildren) {
-  const themeMode = useSetting('theme_mode')
-
-  const themeColor = useSetting('theme_color')
-
-  const [cachedThemePalette, setCachedThemePalette] =
-    useLocalStorageState<Theme>(THEME_PALETTE_KEY, {
-      defaultValue: themeFromSourceColor(
-        // use default color if theme color is not set
-        argbFromHex(themeColor.value || DEFAULT_COLOR),
-      ),
-    })
-
-  const [cachedThemeCssVars, setCachedThemeCssVars] =
-    useLocalStorageState<string>(THEME_CSS_VARS_KEY, {
-      defaultValue: cachedThemePalette
-        ? generateThemeCssVars(cachedThemePalette)
-        : '',
-    })
-
-  // automatically insert custom theme css vars into document head
-  useEffect(() => {
-    insertStyle(CUSTOM_THEME_KEY, cachedThemeCssVars)
-  }, [cachedThemeCssVars])
-
-  const setThemeColor = useCallback(
-    async (color: string) => {
-      if (color === themeColor.value) {
-        return
-      } else {
-        await themeColor.upsert(color)
-      }
-
-      const materialColor = themeFromSourceColor(
-        // use default color if theme color is not set
-        argbFromHex(color || DEFAULT_COLOR),
-      )
-
-      if (isEqual(materialColor, cachedThemePalette)) {
-        return
-      } else {
-        setCachedThemePalette(materialColor)
-      }
-
-      const themeCssVars = generateThemeCssVars(materialColor)
-      setCachedThemeCssVars(themeCssVars)
-    },
-    [
-      themeColor,
-      cachedThemePalette,
-      setCachedThemeCssVars,
-      setCachedThemePalette,
-    ],
+  const themePalette = useMemo(
+    () => themeFromSourceColor(argbFromHex(DEFAULT_COLOR)),
+    [],
   )
 
-  // listen to theme changed event and change html theme mode
+  const muiTheme = useMemo(() => createMDYTheme(DEFAULT_COLOR), [])
+
   useEffect(() => {
-    if (!appWindow) {
-      return () => {}
-    }
+    insertStyle(CUSTOM_THEME_KEY, '')
+  }, [])
 
-    const unlisten = appWindow.onThemeChanged((e) => {
-      if (themeMode.value === ThemeMode.SYSTEM) {
-        changeHtmlThemeMode(e.payload)
-      }
-    })
-
-    return () => {
-      unlisten.then((fn) => fn())
-    }
-  }, [themeMode.value])
-
-  const setThemeMode = useCallback(
-    async (mode: ThemeMode) => {
-      // if theme mode is not system, change html theme mode
-      if (mode !== ThemeMode.SYSTEM) {
-        changeHtmlThemeMode(mode)
-      }
-
-      if (mode !== themeMode.value) {
-        await themeMode.upsert(mode)
-      }
-    },
-    [themeMode],
-  )
+  const setThemeColor = async () => {}
+  const setThemeMode = async () => {}
 
   return (
     <ThemeContext.Provider
       value={{
-        themePalette: cachedThemePalette,
-        themeCssVars: cachedThemeCssVars,
-        themeColor: themeColor.value || DEFAULT_COLOR,
+        themePalette,
+        themeCssVars: '',
+        themeColor: DEFAULT_COLOR,
         setThemeColor,
-        themeMode: themeMode.value as ThemeMode,
+        themeMode: ThemeMode.SYSTEM,
         setThemeMode,
       }}
     >
-      {children}
+      <CssVarsProvider theme={muiTheme} modeStorageKey="mui-mode-v1">
+        <MUIColorSchemeSync themeMode={ThemeMode.SYSTEM} />
+        {children}
+      </CssVarsProvider>
     </ThemeContext.Provider>
   )
 }

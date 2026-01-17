@@ -21,6 +21,7 @@ import { lazy } from 'react'
 import { BlockTaskProvider } from '@/components/providers/block-task-provider'
 import { LanguageProvider } from '@/components/providers/language-provider'
 import { ExperimentalThemeProvider } from '@/components/providers/theme-provider'
+import { IS_IN_TAURI } from '@/utils/tauri'
 import { NyanpasuProvider } from '@nyanpasu/interface'
 import styles from './-__root.module.scss'
 
@@ -64,7 +65,7 @@ export default function App() {
   useNyanpasuStorageSubscribers()
 
   useMount(() => {
-    if (typeof window === 'undefined' || !('__TAURI__' in window)) {
+    if (!IS_IN_TAURI) {
       return
     }
 

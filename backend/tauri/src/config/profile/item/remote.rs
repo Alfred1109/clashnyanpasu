@@ -23,6 +23,9 @@ use std::time::Duration;
 use sysproxy::Sysproxy;
 use url::Url;
 
+const FALLBACK_BROWSER_UA: &str =
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
 const PROFILE_TYPE: ProfileItemType = ProfileItemType::Remote;
 
 pub trait RemoteProfileSubscription {
@@ -149,13 +152,13 @@ async fn subscribe_url(
         };
     let user_agent = options.user_agent.clone().unwrap();
 
-    let build_client = |proxy: Option<&str>| {
+    let build_client = |proxy: Option<&str>, ua: &str| {
         let mut builder = base_builder();
         if let Some(proxy_url) = proxy {
             builder = builder.swift_set_proxy(proxy_url);
         }
         builder
-            .user_agent(user_agent.clone())
+            .user_agent(ua.to_string())
             .build()
             .map_err(|e| SubscribeError::Network {
                 url: url.to_string(),
@@ -184,7 +187,7 @@ async fn subscribe_url(
 
     let resp = match proxy_url.as_deref() {
         Some(proxy_url) => {
-            let client = build_client(Some(proxy_url))?;
+            let client = build_client(Some(proxy_url), &user_agent)?;
             match perform_req(client).await {
                 Ok(resp) => resp,
                 Err(err) => {
@@ -192,7 +195,48 @@ async fn subscribe_url(
                         tracing::warn!(
                             "subscription fetch failed via proxy, retrying without proxy: {err}"
                         );
-                        let client = build_client(None)?;
+                        let client = build_client(None, &user_agent)?;
+                        match perform_req(client).await {
+                            Ok(resp) => resp,
+                            Err(err) => {
+                                if err
+                                    .status()
+                                    .is_some_and(|s| s == reqwest::StatusCode::IM_A_TEAPOT)
+                                    || err
+                                        .status()
+                                        .is_some_and(|s| s == reqwest::StatusCode::FORBIDDEN)
+                                {
+                                    tracing::warn!(
+                                        "subscription blocked ({}), retrying with browser UA",
+                                        err.status().unwrap()
+                                    );
+                                    let client = build_client(None, FALLBACK_BROWSER_UA)?;
+                                    perform_req(client)
+                                        .await
+                                        .map_err(|e| SubscribeError::Network {
+                                            url: url.to_string(),
+                                            source: e,
+                                        })?
+                                } else {
+                                    return Err(SubscribeError::Network {
+                                        url: url.to_string(),
+                                        source: err,
+                                    });
+                                }
+                            }
+                        }
+                    } else if err
+                        .status()
+                        .is_some_and(|s| s == reqwest::StatusCode::IM_A_TEAPOT)
+                        || err
+                            .status()
+                            .is_some_and(|s| s == reqwest::StatusCode::FORBIDDEN)
+                    {
+                        tracing::warn!(
+                            "subscription blocked ({}), retrying with browser UA",
+                            err.status().unwrap()
+                        );
+                        let client = build_client(Some(proxy_url), FALLBACK_BROWSER_UA)?;
                         perform_req(client)
                             .await
                             .map_err(|e| SubscribeError::Network {
@@ -209,13 +253,36 @@ async fn subscribe_url(
             }
         }
         None => {
-            let client = build_client(None)?;
-            perform_req(client)
-                .await
-                .map_err(|e| SubscribeError::Network {
-                    url: url.to_string(),
-                    source: e,
-                })?
+            let client = build_client(None, &user_agent)?;
+            match perform_req(client).await {
+                Ok(resp) => resp,
+                Err(err) => {
+                    if err
+                        .status()
+                        .is_some_and(|s| s == reqwest::StatusCode::IM_A_TEAPOT)
+                        || err
+                            .status()
+                            .is_some_and(|s| s == reqwest::StatusCode::FORBIDDEN)
+                    {
+                        tracing::warn!(
+                            "subscription blocked ({}), retrying with browser UA",
+                            err.status().unwrap()
+                        );
+                        let client = build_client(None, FALLBACK_BROWSER_UA)?;
+                        perform_req(client)
+                            .await
+                            .map_err(|e| SubscribeError::Network {
+                                url: url.to_string(),
+                                source: e,
+                            })?
+                    } else {
+                        return Err(SubscribeError::Network {
+                            url: url.to_string(),
+                            source: err,
+                        });
+                    }
+                }
+            }
         }
     };
 

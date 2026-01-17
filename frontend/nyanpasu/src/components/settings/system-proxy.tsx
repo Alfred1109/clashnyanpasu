@@ -3,7 +3,7 @@ import SettingsEthernet from '~icons/material-symbols/settings-ethernet-rounded'
 import { useBlockTask } from '@/components/providers/block-task-provider'
 import { Button, ButtonProps } from '@/components/ui/button'
 import { CircularProgress } from '@/components/ui/progress'
-import { m } from '@/paraglide/messages'
+import { useTranslation } from 'react-i18next'
 import {
   toggleSystemProxy,
   toggleTunMode,
@@ -52,6 +52,7 @@ const ProxyButton = ({
 export const SystemProxyButton = (
   props: Omit<ButtonProps, 'children' | 'loading'>,
 ) => {
+  const { t } = useTranslation()
   const systemProxy = useSetting('enable_system_proxy')
 
   const { execute, isPending } = useBlockTask('system-proxy', async () => {
@@ -66,7 +67,7 @@ export const SystemProxyButton = (
       isActive={Boolean(systemProxy.value)}
     >
       <NetworkPing />
-      <span>{m.settings_system_proxy_system_proxy_label()}</span>
+      <span>{t('System Proxy')}</span>
     </ProxyButton>
   )
 }
@@ -74,6 +75,7 @@ export const SystemProxyButton = (
 export const TunModeButton = (
   props: Omit<ButtonProps, 'children' | 'loading'>,
 ) => {
+  const { t } = useTranslation()
   const tunMode = useSetting('enable_tun_mode')
 
   const { execute, isPending } = useBlockTask('tun-mode', async () => {
@@ -88,7 +90,7 @@ export const TunModeButton = (
       isActive={Boolean(tunMode.value)}
     >
       <SettingsEthernet />
-      <span>{m.settings_system_proxy_tun_mode_label()}</span>
+      <span>{t('TUN Mode')}</span>
     </ProxyButton>
   )
 }

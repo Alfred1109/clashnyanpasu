@@ -47,11 +47,6 @@ export const proxyGroupSortAtom = atomWithLocalStorage<SortType>(
   SortType.Default,
 )
 
-export const themeMode = atomWithLocalStorage<'light' | 'dark'>(
-  'themeMode',
-  'light',
-)
-
 export const atomIsDrawer = atom<boolean>()
 
 export const atomIsDrawerOnlyIcon = atomWithStorage<boolean>(

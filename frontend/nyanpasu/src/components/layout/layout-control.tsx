@@ -14,9 +14,10 @@ import { alpha, cn } from '@nyanpasu/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { listen, TauriEvent, UnlistenFn } from '@tauri-apps/api/event'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
+import { IS_IN_TAURI } from '@/utils/tauri'
 
 // Check if we're in Tauri environment before calling Tauri APIs
-const isInTauri = typeof window !== 'undefined' && '__TAURI__' in window
+const isInTauri = IS_IN_TAURI
 
 // Get app window instance, but don't let it be null in Tauri environment
 let appWindow: ReturnType<typeof getCurrentWebviewWindow> | null = null

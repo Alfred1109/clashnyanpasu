@@ -1,6 +1,5 @@
 import { OS } from '@/consts'
 import '@/services/monaco'
-import { useAtomValue } from 'jotai'
 import { type JSONSchema7 } from 'json-schema'
 import nyanpasuMergeSchema from 'meta-json-schema/schemas/clash-nyanpasu-merge-json-schema.json'
 import clashMetaSchema from 'meta-json-schema/schemas/meta-json-schema.json'
@@ -8,8 +7,7 @@ import { type editor } from 'monaco-editor'
 import { configureMonacoYaml } from 'monaco-yaml'
 import { nanoid } from 'nanoid'
 import { useCallback, useMemo, useRef } from 'react'
-// schema
-import { themeMode } from '@/store'
+import { useColorScheme } from '@mui/material/styles'
 import MonacoEditor, { type Monaco } from '@monaco-editor/react'
 import { openThat } from '@nyanpasu/interface'
 import { cn } from '@nyanpasu/ui'
@@ -112,7 +110,7 @@ export default function ProfileMonacoViewer({
   onValidate,
   ...others
 }: ProfileMonacoViewProps) {
-  const mode = useAtomValue(themeMode)
+  const { mode } = useColorScheme()
 
   const path = useMemo(
     () => `${nanoid()}.${schemaType ? `${schemaType}.` : ''}${language}`,

@@ -7,7 +7,6 @@ import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import IconButton from '@mui/material/IconButton'
 import Paper, { PaperProps } from '@mui/material/Paper'
-import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
 import { openThat } from '@nyanpasu/interface'
 import { alpha } from '@nyanpasu/ui'
@@ -112,23 +111,25 @@ export const openWebUrl = (
 
 /**
  * @example
- * <Item>
- *  <Child />
- * </Item>
- *
- * `Material You list Item. Extend MuiPaper.`
+ * <Item />
  *
  * @author keiko233 <i@elaina.moe>
  * @copyright LibNyanpasu org. 2024
  */
-export const Item = styled(Paper)<PaperProps>(({ theme }) => ({
-  backgroundColor: alpha(theme.vars.palette.primary.main, 0.1),
-  padding: 16,
-  borderRadius: 16,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8,
-})) as typeof Paper
+export const Item = (props: PaperProps) => (
+  <Paper
+    {...props}
+    sx={{
+      backgroundColor: (theme) => alpha(theme.vars.palette.primary.main, 0.1),
+      padding: 2,
+      borderRadius: 2,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 1,
+      ...props.sx,
+    }}
+  />
+)
 
 export interface ClashWebItemProps {
   label: ReactNode

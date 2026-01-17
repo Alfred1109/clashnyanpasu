@@ -1,9 +1,8 @@
 import { useCreation } from 'ahooks'
-import { useAtomValue } from 'jotai'
 import { nanoid } from 'nanoid'
 import { lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
-import { themeMode } from '@/store'
+import { useColorScheme } from '@mui/material/styles'
 import {
   useProfile,
   useProfileContent,
@@ -37,7 +36,7 @@ export default function RuntimeConfigDiffDialog({
 
   const loaded = !contentFn.query.isLoading && !query.isLoading
 
-  const mode = useAtomValue(themeMode)
+  const { mode } = useColorScheme()
 
   const originalModelPath = useCreation(() => `${nanoid()}.clash.yaml`, [])
   const modifiedModelPath = useCreation(() => `${nanoid()}.runtime.yaml`, [])

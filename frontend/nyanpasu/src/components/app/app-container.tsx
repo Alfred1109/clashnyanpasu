@@ -1,4 +1,5 @@
 import getSystem from '@/utils/get-system'
+import { IS_IN_TAURI } from '@/utils/tauri'
 import { Box } from '@mui/material'
 import Paper from '@mui/material/Paper'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
@@ -15,7 +16,7 @@ import styles from './app-container.module.scss'
 import AppDrawer from './app-drawer'
 import DrawerContent from './drawer-content'
 
-const isInTauri = typeof window !== 'undefined' && '__TAURI__' in window
+const isInTauri = IS_IN_TAURI
 const appWindow = isInTauri ? getCurrentWebviewWindow() : null
 
 const OS = getSystem()

@@ -1,5 +1,6 @@
 import { useLockFn } from 'ahooks'
 import { useTranslation } from 'react-i18next'
+import { IS_IN_TAURI } from '@/utils/tauri'
 import { message } from '@tauri-apps/plugin-dialog'
 import { toggleTunMode, useSetting } from '@nyanpasu/interface'
 import { BaseCard } from '@nyanpasu/ui'
@@ -55,7 +56,7 @@ const TunModeButton = ({
 
 export default function SettingSystemProxy() {
   const { t } = useTranslation()
-  const isInTauri = typeof window !== 'undefined' && '__TAURI__' in window
+  const isInTauri = IS_IN_TAURI
 
   return (
     <BaseCard label={t('TUN Mode')}>

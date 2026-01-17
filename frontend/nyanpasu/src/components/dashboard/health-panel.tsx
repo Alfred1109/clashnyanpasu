@@ -1,12 +1,13 @@
 import { useInterval } from 'ahooks'
 import { useRef, useState } from 'react'
+import { IS_IN_TAURI } from '@/utils/tauri'
 import { timing } from '@nyanpasu/interface'
 import IPASNPanel from './modules/ipasn-panel'
 import TimingPanel from './modules/timing-panel'
 
 const REFRESH_SECONDS = 5
 
-const isInTauri = typeof window !== 'undefined' && '__TAURI__' in window
+const isInTauri = IS_IN_TAURI
 
 export const HealthPanel = () => {
   const [health, setHealth] = useState({

@@ -6,6 +6,7 @@ import { OS } from '@/consts'
 import { serviceManualPromptDialogAtom } from '@/store/service'
 import { notification } from '@/utils/notification'
 import { getShikiSingleton } from '@/utils/shiki'
+import { IS_IN_TAURI } from '@/utils/tauri'
 import ContentPasteIcon from '@mui/icons-material/ContentPaste'
 import { IconButton, Tooltip } from '@mui/material'
 import { useColorScheme } from '@mui/material/styles'
@@ -14,7 +15,7 @@ import { BaseDialog, BaseDialogProps, cn } from '@nyanpasu/ui'
 import { useQuery } from '@tanstack/react-query'
 import styles from './service-manual-prompt-dialog.module.scss'
 
-const isInTauri = typeof window !== 'undefined' && '__TAURI__' in window
+const isInTauri = IS_IN_TAURI
 
 type CopyToClipboardButtonProps = {
   onClick: () => void

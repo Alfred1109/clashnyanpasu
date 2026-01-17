@@ -7,7 +7,8 @@ import { atomIsDrawer } from '@/store'
 import { Box, CircularProgress, Paper, Tooltip } from '@mui/material'
 import Grid from '@mui/material/Grid'
 import type { SxProps, Theme } from '@mui/material/styles'
-import { getCoreStatus, useSystemService } from '@nyanpasu/interface'
+import { getCoreStatus } from '@nyanpasu/interface'
+import { useServiceManager } from '@/hooks/use-service-manager'
 import { alpha } from '@nyanpasu/ui'
 import { useQuery } from '@tanstack/react-query'
 
@@ -21,9 +22,8 @@ export const ServiceShortcuts = () => {
 
   const isDrawer = useAtomValue(atomIsDrawer)
 
-  const {
-    query: { data: serviceStatus },
-  } = useSystemService()
+  const serviceManager = useServiceManager()
+  const serviceStatus = serviceManager.query.data
 
   const coreStatusSWR = useQuery({
     queryKey: ['/coreStatus'],
