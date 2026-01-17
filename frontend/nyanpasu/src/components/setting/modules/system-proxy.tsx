@@ -1,9 +1,9 @@
 import { useControllableValue } from 'ahooks'
 import { memo, ReactNode } from 'react'
-import { mergeSxProps } from '@/utils/mui-theme'
+// mergeSxProps removed in extreme cleanup
 import { CircularProgress } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
-import { alpha } from '@nyanpasu/ui'
+// alpha removed in extreme cleanup
 import { PaperButton, PaperButtonProps } from './nyanpasu-path'
 
 export interface PaperSwitchButtonProps extends PaperButtonProps {
@@ -48,19 +48,10 @@ export const PaperSwitchButton = memo(function PaperSwitchButton({
   return (
     <PaperButton
       label={label}
-      sxPaper={mergeSxProps(
-        ((theme) => ({
-          backgroundColor: checked
-            ? alpha(theme.vars.palette.primary.main, 0.1)
-            : theme.vars.palette.grey[100],
-          ...theme.applyStyles('dark', {
-            backgroundColor: checked
-              ? alpha(theme.vars.palette.primary.main, 0.1)
-              : theme.vars.palette.common.black,
-          }),
-        })) as SxProps<Theme>,
-        sxPaper,
-      )}
+      sxPaper={{
+        backgroundColor: checked ? '#e3f2fd' : '#f5f5f5',
+        ...sxPaper,
+      }}
       sxButton={{
         flexDirection: 'column',
         alignItems: 'start',

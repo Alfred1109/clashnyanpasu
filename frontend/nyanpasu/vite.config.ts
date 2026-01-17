@@ -285,6 +285,9 @@ export default defineConfig(({ command, mode }) => {
       sourcemap: isDev || IS_NIGHTLY ? 'inline' : false,
       // 增大chunk警告阈值，避免不必要的警告
       chunkSizeWarningLimit: 1000,
+      // 确保 locale 和其他静态资源被正确复制
+      copyPublicDir: true,
+      assetsDir: 'assets',
     },
     define: {
       OS_PLATFORM: `"${process.platform}"`,

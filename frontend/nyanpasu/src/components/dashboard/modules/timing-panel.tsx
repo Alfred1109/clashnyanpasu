@@ -1,6 +1,6 @@
 import { useAtomValue } from 'jotai'
 import { useTranslation } from 'react-i18next'
-import { useColorSxForDelay } from '@/hooks/theme'
+// Theme hook removed in extreme cleanup
 import { atomIsDrawer } from '@/store'
 import { Box, Paper } from '@mui/material'
 import Grid from '@mui/material/Grid'
@@ -9,7 +9,8 @@ import { useSetting } from '@nyanpasu/interface'
 function LatencyTag({ name, value }: { name: string; value: number }) {
   const { t } = useTranslation()
 
-  const sx = useColorSxForDelay(value)
+  // Simplified styling in extreme cleanup - removed color theming
+  const sx = { color: value > 1000 ? 'red' : 'green' }
 
   return (
     <div className="flex justify-between gap-1">

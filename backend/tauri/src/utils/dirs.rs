@@ -37,9 +37,6 @@ pub const STORAGE_DB: &str = "storage.db";
 
 pub static APP_VERSION: &str = env!("NYANPASU_VERSION");
 
-pub fn get_app_version() -> &'static str {
-    APP_VERSION
-}
 
 #[cfg(target_os = "windows")]
 pub fn get_portable_flag() -> bool {
@@ -226,14 +223,6 @@ pub fn cache_dir() -> Result<PathBuf> {
     Ok(path)
 }
 
-pub fn tray_icons_path(mode: &str) -> Result<PathBuf> {
-    let icons_dir = app_config_dir()?.join("icons");
-    static INIT: std::sync::Once = std::sync::Once::new();
-    INIT.call_once(|| {
-        log_err!(create_dir_all(&icons_dir));
-    });
-    Ok(icons_dir.join(format!("{mode}.png")))
-}
 
 #[cfg(windows)]
 #[deprecated(since = "1.6.0", note = "should use nyanpasu_utils::dirs mod instead")]

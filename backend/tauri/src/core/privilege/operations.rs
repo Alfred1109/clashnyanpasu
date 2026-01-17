@@ -9,26 +9,7 @@ use crate::config::Config;
 
 /// 设置系统代理
 pub async fn set_system_proxy(enable: bool) -> Result<()> {
-    let port = Config::verge()
-        .latest()
-        .verge_mixed_port
-        .unwrap_or(Config::clash().data().get_mixed_port());
-
-    let bypass = Config::verge()
-        .latest()
-        .system_proxy_bypass
-        .clone()
-        .unwrap_or_default()
-        .split(',')
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .collect();
-
-    let operation = PrivilegedOperation::SetSystemProxy {
-        enable,
-        port,
-        bypass,
-    };
+    let operation = PrivilegedOperation::SetSystemProxy { enable };
 
     let result = PrivilegeManager::global()
         .execute_operation(operation)
@@ -64,15 +45,6 @@ pub async fn set_tun_mode(enable: bool) -> Result<()> {
     Ok(())
 }
 
-/// 切换系统代理（保持与现有API兼容）
-pub async fn toggle_system_proxy() -> Result<()> {
-    let current_enable = Config::verge()
-        .latest()
-        .enable_system_proxy
-        .unwrap_or(false);
-
-    set_system_proxy(!current_enable).await
-}
 
 /// 切换TUN模式（保持与现有API兼容）
 pub async fn toggle_tun_mode() -> Result<()> {

@@ -29,27 +29,7 @@ use serde_yaml::{Mapping, Value};
 use tauri::{AppHandle, Manager};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 
-// 打开面板
-#[allow(unused)]
-pub fn open_dashboard() {
-    let handle = handle::Handle::global();
-    let app_handle = handle.app_handle.lock();
-    if let Some(app_handle) = app_handle.as_ref() {
-        resolve::create_window(app_handle);
-    }
-}
-
-// 关闭面板
-#[allow(unused)]
-pub fn close_dashboard() {
-    let handle = handle::Handle::global();
-    let app_handle = handle.app_handle.lock();
-    if let Some(app_handle) = app_handle.as_ref() {
-        resolve::close_window(app_handle);
-    }
-}
-
-// 开关面板
+// 切换面板显示状态
 pub fn toggle_dashboard() {
     let handle = handle::Handle::global();
     let app_handle = handle.app_handle.lock();
@@ -113,51 +93,7 @@ pub fn change_clash_mode(mode: String) {
     });
 }
 
-// 切换系统代理 - 使用新的权限管理系统
-pub fn toggle_system_proxy() {
-    tauri::async_runtime::spawn(async move {
-        // 使用新的权限管理系统进行智能代理操作
-        match crate::core::privilege::operations::toggle_system_proxy().await {
-            Ok(_) => {
-                log::info!(target: "app", "系统代理切换成功");
-                handle::Handle::refresh_verge();
-            }
-            Err(err) => {
-                log::error!(target: "app", "系统代理切换失败: {err:?}");
-            }
-        }
-    });
-}
 
-// 打开系统代理
-pub fn enable_system_proxy() {
-    tauri::async_runtime::spawn(async {
-        match patch_verge(IVerge {
-            enable_system_proxy: Some(true),
-            ..IVerge::default()
-        })
-        .await
-        {
-            Ok(_) => handle::Handle::refresh_verge(),
-            Err(err) => log::error!(target: "app", "{err:?}"),
-        }
-    });
-}
-
-// 关闭系统代理
-pub fn disable_system_proxy() {
-    tauri::async_runtime::spawn(async {
-        match patch_verge(IVerge {
-            enable_system_proxy: Some(false),
-            ..IVerge::default()
-        })
-        .await
-        {
-            Ok(_) => handle::Handle::refresh_verge(),
-            Err(err) => log::error!(target: "app", "{err:?}"),
-        }
-    });
-}
 
 // 切换tun模式 - 使用新的权限管理系统
 pub fn toggle_tun_mode() {
@@ -298,8 +234,6 @@ pub async fn patch_verge(patch: IVerge) -> Result<()> {
     Config::verge().draft().patch_config(patch.clone());
     let tun_mode = patch.enable_tun_mode;
     let auto_launch = patch.enable_auto_launch;
-    let system_proxy = patch.enable_system_proxy;
-    let proxy_bypass = patch.system_proxy_bypass;
     let language = patch.language;
     let log_level = patch.app_log_level;
     let log_max_files = patch.max_log_files;
@@ -357,10 +291,6 @@ pub async fn patch_verge(patch: IVerge) -> Result<()> {
         if auto_launch.is_some() {
             sysopt::Sysopt::global().update_launch()?;
         }
-        if system_proxy.is_some() || proxy_bypass.is_some() {
-            sysopt::Sysopt::global().update_sysproxy()?;
-            sysopt::Sysopt::global().guard_proxy();
-        }
 
         if let Some(true) = patch.enable_proxy_guard {
             sysopt::Sysopt::global().guard_proxy();
@@ -373,7 +303,7 @@ pub async fn patch_verge(patch: IVerge) -> Result<()> {
         if language.is_some() {
             rust_i18n::set_locale(language.unwrap().as_str());
             handle::Handle::update_systray()?;
-        } else if system_proxy.or(tun_mode).or(enable_tray_text).is_some() {
+        } else if tun_mode.or(enable_tray_text).is_some() {
             handle::Handle::update_systray_part()?;
         }
 

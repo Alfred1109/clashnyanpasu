@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './pages/__root'
 import { Route as legacyRouteRouteImport } from './pages/(legacy)/route'
-import { Route as experimentalRouteRouteImport } from './pages/(experimental)/route'
 import { Route as IndexRouteImport } from './pages/index'
 import { Route as legacySettingsRouteImport } from './pages/(legacy)/settings'
 import { Route as legacyRulesRouteImport } from './pages/(legacy)/rules'
@@ -20,34 +19,9 @@ import { Route as legacyProfilesRouteImport } from './pages/(legacy)/profiles'
 import { Route as legacyLogsRouteImport } from './pages/(legacy)/logs'
 import { Route as legacyDashboardRouteImport } from './pages/(legacy)/dashboard'
 import { Route as legacyConnectionsRouteImport } from './pages/(legacy)/connections'
-import { Route as experimentalExperimentalSettingsRouteRouteImport } from './pages/(experimental)/experimental/settings/route'
-import { Route as experimentalExperimentalRulesRouteRouteImport } from './pages/(experimental)/experimental/rules/route'
-import { Route as experimentalExperimentalProxiesRouteRouteImport } from './pages/(experimental)/experimental/proxies/route'
-import { Route as experimentalExperimentalProvidersRouteRouteImport } from './pages/(experimental)/experimental/providers/route'
-import { Route as experimentalExperimentalProfilesRouteRouteImport } from './pages/(experimental)/experimental/profiles/route'
-import { Route as experimentalExperimentalLogsRouteRouteImport } from './pages/(experimental)/experimental/logs/route'
-import { Route as experimentalExperimentalDashboardRouteRouteImport } from './pages/(experimental)/experimental/dashboard/route'
-import { Route as experimentalExperimentalConnectionsRouteRouteImport } from './pages/(experimental)/experimental/connections/route'
-import { Route as experimentalExperimentalSettingsIndexRouteImport } from './pages/(experimental)/experimental/settings/index'
-import { Route as experimentalExperimentalSettingsWebUiRouteRouteImport } from './pages/(experimental)/experimental/settings/web-ui/route'
-import { Route as experimentalExperimentalSettingsUserInterfaceRouteRouteImport } from './pages/(experimental)/experimental/settings/user-interface/route'
-import { Route as experimentalExperimentalSettingsSystemServiceRouteRouteImport } from './pages/(experimental)/experimental/settings/system-service/route'
-import { Route as experimentalExperimentalSettingsSystemProxyRouteRouteImport } from './pages/(experimental)/experimental/settings/system-proxy/route'
-import { Route as experimentalExperimentalSettingsSystemBehaviorRouteRouteImport } from './pages/(experimental)/experimental/settings/system-behavior/route'
-import { Route as experimentalExperimentalSettingsNyanpasuConfigRouteRouteImport } from './pages/(experimental)/experimental/settings/nyanpasu-config/route'
-import { Route as experimentalExperimentalSettingsDebugUtilsRouteRouteImport } from './pages/(experimental)/experimental/settings/debug-utils/route'
-import { Route as experimentalExperimentalSettingsClashSettingsRouteRouteImport } from './pages/(experimental)/experimental/settings/clash-settings/route'
-import { Route as experimentalExperimentalSettingsClashFiledRouteRouteImport } from './pages/(experimental)/experimental/settings/clash-filed/route'
-import { Route as experimentalExperimentalSettingsClashExternalControllRouteRouteImport } from './pages/(experimental)/experimental/settings/clash-external-controll/route'
-import { Route as experimentalExperimentalSettingsClashCoreRouteRouteImport } from './pages/(experimental)/experimental/settings/clash-core/route'
-import { Route as experimentalExperimentalSettingsAboutRouteRouteImport } from './pages/(experimental)/experimental/settings/about/route'
 
 const legacyRouteRoute = legacyRouteRouteImport.update({
   id: '/(legacy)',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const experimentalRouteRoute = experimentalRouteRouteImport.update({
-  id: '/(experimental)',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -95,132 +69,6 @@ const legacyConnectionsRoute = legacyConnectionsRouteImport.update({
   path: '/connections',
   getParentRoute: () => legacyRouteRoute,
 } as any)
-const experimentalExperimentalSettingsRouteRoute =
-  experimentalExperimentalSettingsRouteRouteImport.update({
-    id: '/experimental/settings',
-    path: '/experimental/settings',
-    getParentRoute: () => experimentalRouteRoute,
-  } as any)
-const experimentalExperimentalRulesRouteRoute =
-  experimentalExperimentalRulesRouteRouteImport.update({
-    id: '/experimental/rules',
-    path: '/experimental/rules',
-    getParentRoute: () => experimentalRouteRoute,
-  } as any)
-const experimentalExperimentalProxiesRouteRoute =
-  experimentalExperimentalProxiesRouteRouteImport.update({
-    id: '/experimental/proxies',
-    path: '/experimental/proxies',
-    getParentRoute: () => experimentalRouteRoute,
-  } as any)
-const experimentalExperimentalProvidersRouteRoute =
-  experimentalExperimentalProvidersRouteRouteImport.update({
-    id: '/experimental/providers',
-    path: '/experimental/providers',
-    getParentRoute: () => experimentalRouteRoute,
-  } as any)
-const experimentalExperimentalProfilesRouteRoute =
-  experimentalExperimentalProfilesRouteRouteImport.update({
-    id: '/experimental/profiles',
-    path: '/experimental/profiles',
-    getParentRoute: () => experimentalRouteRoute,
-  } as any)
-const experimentalExperimentalLogsRouteRoute =
-  experimentalExperimentalLogsRouteRouteImport.update({
-    id: '/experimental/logs',
-    path: '/experimental/logs',
-    getParentRoute: () => experimentalRouteRoute,
-  } as any)
-const experimentalExperimentalDashboardRouteRoute =
-  experimentalExperimentalDashboardRouteRouteImport.update({
-    id: '/experimental/dashboard',
-    path: '/experimental/dashboard',
-    getParentRoute: () => experimentalRouteRoute,
-  } as any)
-const experimentalExperimentalConnectionsRouteRoute =
-  experimentalExperimentalConnectionsRouteRouteImport.update({
-    id: '/experimental/connections',
-    path: '/experimental/connections',
-    getParentRoute: () => experimentalRouteRoute,
-  } as any)
-const experimentalExperimentalSettingsIndexRoute =
-  experimentalExperimentalSettingsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => experimentalExperimentalSettingsRouteRoute,
-  } as any)
-const experimentalExperimentalSettingsWebUiRouteRoute =
-  experimentalExperimentalSettingsWebUiRouteRouteImport.update({
-    id: '/web-ui',
-    path: '/web-ui',
-    getParentRoute: () => experimentalExperimentalSettingsRouteRoute,
-  } as any)
-const experimentalExperimentalSettingsUserInterfaceRouteRoute =
-  experimentalExperimentalSettingsUserInterfaceRouteRouteImport.update({
-    id: '/user-interface',
-    path: '/user-interface',
-    getParentRoute: () => experimentalExperimentalSettingsRouteRoute,
-  } as any)
-const experimentalExperimentalSettingsSystemServiceRouteRoute =
-  experimentalExperimentalSettingsSystemServiceRouteRouteImport.update({
-    id: '/system-service',
-    path: '/system-service',
-    getParentRoute: () => experimentalExperimentalSettingsRouteRoute,
-  } as any)
-const experimentalExperimentalSettingsSystemProxyRouteRoute =
-  experimentalExperimentalSettingsSystemProxyRouteRouteImport.update({
-    id: '/system-proxy',
-    path: '/system-proxy',
-    getParentRoute: () => experimentalExperimentalSettingsRouteRoute,
-  } as any)
-const experimentalExperimentalSettingsSystemBehaviorRouteRoute =
-  experimentalExperimentalSettingsSystemBehaviorRouteRouteImport.update({
-    id: '/system-behavior',
-    path: '/system-behavior',
-    getParentRoute: () => experimentalExperimentalSettingsRouteRoute,
-  } as any)
-const experimentalExperimentalSettingsNyanpasuConfigRouteRoute =
-  experimentalExperimentalSettingsNyanpasuConfigRouteRouteImport.update({
-    id: '/nyanpasu-config',
-    path: '/nyanpasu-config',
-    getParentRoute: () => experimentalExperimentalSettingsRouteRoute,
-  } as any)
-const experimentalExperimentalSettingsDebugUtilsRouteRoute =
-  experimentalExperimentalSettingsDebugUtilsRouteRouteImport.update({
-    id: '/debug-utils',
-    path: '/debug-utils',
-    getParentRoute: () => experimentalExperimentalSettingsRouteRoute,
-  } as any)
-const experimentalExperimentalSettingsClashSettingsRouteRoute =
-  experimentalExperimentalSettingsClashSettingsRouteRouteImport.update({
-    id: '/clash-settings',
-    path: '/clash-settings',
-    getParentRoute: () => experimentalExperimentalSettingsRouteRoute,
-  } as any)
-const experimentalExperimentalSettingsClashFiledRouteRoute =
-  experimentalExperimentalSettingsClashFiledRouteRouteImport.update({
-    id: '/clash-filed',
-    path: '/clash-filed',
-    getParentRoute: () => experimentalExperimentalSettingsRouteRoute,
-  } as any)
-const experimentalExperimentalSettingsClashExternalControllRouteRoute =
-  experimentalExperimentalSettingsClashExternalControllRouteRouteImport.update({
-    id: '/clash-external-controll',
-    path: '/clash-external-controll',
-    getParentRoute: () => experimentalExperimentalSettingsRouteRoute,
-  } as any)
-const experimentalExperimentalSettingsClashCoreRouteRoute =
-  experimentalExperimentalSettingsClashCoreRouteRouteImport.update({
-    id: '/clash-core',
-    path: '/clash-core',
-    getParentRoute: () => experimentalExperimentalSettingsRouteRoute,
-  } as any)
-const experimentalExperimentalSettingsAboutRouteRoute =
-  experimentalExperimentalSettingsAboutRouteRouteImport.update({
-    id: '/about',
-    path: '/about',
-    getParentRoute: () => experimentalExperimentalSettingsRouteRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -232,27 +80,6 @@ export interface FileRoutesByFullPath {
   '/proxies': typeof legacyProxiesRoute
   '/rules': typeof legacyRulesRoute
   '/settings': typeof legacySettingsRoute
-  '/experimental/connections': typeof experimentalExperimentalConnectionsRouteRoute
-  '/experimental/dashboard': typeof experimentalExperimentalDashboardRouteRoute
-  '/experimental/logs': typeof experimentalExperimentalLogsRouteRoute
-  '/experimental/profiles': typeof experimentalExperimentalProfilesRouteRoute
-  '/experimental/providers': typeof experimentalExperimentalProvidersRouteRoute
-  '/experimental/proxies': typeof experimentalExperimentalProxiesRouteRoute
-  '/experimental/rules': typeof experimentalExperimentalRulesRouteRoute
-  '/experimental/settings': typeof experimentalExperimentalSettingsRouteRouteWithChildren
-  '/experimental/settings/about': typeof experimentalExperimentalSettingsAboutRouteRoute
-  '/experimental/settings/clash-core': typeof experimentalExperimentalSettingsClashCoreRouteRoute
-  '/experimental/settings/clash-external-controll': typeof experimentalExperimentalSettingsClashExternalControllRouteRoute
-  '/experimental/settings/clash-filed': typeof experimentalExperimentalSettingsClashFiledRouteRoute
-  '/experimental/settings/clash-settings': typeof experimentalExperimentalSettingsClashSettingsRouteRoute
-  '/experimental/settings/debug-utils': typeof experimentalExperimentalSettingsDebugUtilsRouteRoute
-  '/experimental/settings/nyanpasu-config': typeof experimentalExperimentalSettingsNyanpasuConfigRouteRoute
-  '/experimental/settings/system-behavior': typeof experimentalExperimentalSettingsSystemBehaviorRouteRoute
-  '/experimental/settings/system-proxy': typeof experimentalExperimentalSettingsSystemProxyRouteRoute
-  '/experimental/settings/system-service': typeof experimentalExperimentalSettingsSystemServiceRouteRoute
-  '/experimental/settings/user-interface': typeof experimentalExperimentalSettingsUserInterfaceRouteRoute
-  '/experimental/settings/web-ui': typeof experimentalExperimentalSettingsWebUiRouteRoute
-  '/experimental/settings/': typeof experimentalExperimentalSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -264,31 +91,10 @@ export interface FileRoutesByTo {
   '/proxies': typeof legacyProxiesRoute
   '/rules': typeof legacyRulesRoute
   '/settings': typeof legacySettingsRoute
-  '/experimental/connections': typeof experimentalExperimentalConnectionsRouteRoute
-  '/experimental/dashboard': typeof experimentalExperimentalDashboardRouteRoute
-  '/experimental/logs': typeof experimentalExperimentalLogsRouteRoute
-  '/experimental/profiles': typeof experimentalExperimentalProfilesRouteRoute
-  '/experimental/providers': typeof experimentalExperimentalProvidersRouteRoute
-  '/experimental/proxies': typeof experimentalExperimentalProxiesRouteRoute
-  '/experimental/rules': typeof experimentalExperimentalRulesRouteRoute
-  '/experimental/settings/about': typeof experimentalExperimentalSettingsAboutRouteRoute
-  '/experimental/settings/clash-core': typeof experimentalExperimentalSettingsClashCoreRouteRoute
-  '/experimental/settings/clash-external-controll': typeof experimentalExperimentalSettingsClashExternalControllRouteRoute
-  '/experimental/settings/clash-filed': typeof experimentalExperimentalSettingsClashFiledRouteRoute
-  '/experimental/settings/clash-settings': typeof experimentalExperimentalSettingsClashSettingsRouteRoute
-  '/experimental/settings/debug-utils': typeof experimentalExperimentalSettingsDebugUtilsRouteRoute
-  '/experimental/settings/nyanpasu-config': typeof experimentalExperimentalSettingsNyanpasuConfigRouteRoute
-  '/experimental/settings/system-behavior': typeof experimentalExperimentalSettingsSystemBehaviorRouteRoute
-  '/experimental/settings/system-proxy': typeof experimentalExperimentalSettingsSystemProxyRouteRoute
-  '/experimental/settings/system-service': typeof experimentalExperimentalSettingsSystemServiceRouteRoute
-  '/experimental/settings/user-interface': typeof experimentalExperimentalSettingsUserInterfaceRouteRoute
-  '/experimental/settings/web-ui': typeof experimentalExperimentalSettingsWebUiRouteRoute
-  '/experimental/settings': typeof experimentalExperimentalSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/(experimental)': typeof experimentalRouteRouteWithChildren
   '/(legacy)': typeof legacyRouteRouteWithChildren
   '/(legacy)/connections': typeof legacyConnectionsRoute
   '/(legacy)/dashboard': typeof legacyDashboardRoute
@@ -298,27 +104,6 @@ export interface FileRoutesById {
   '/(legacy)/proxies': typeof legacyProxiesRoute
   '/(legacy)/rules': typeof legacyRulesRoute
   '/(legacy)/settings': typeof legacySettingsRoute
-  '/(experimental)/experimental/connections': typeof experimentalExperimentalConnectionsRouteRoute
-  '/(experimental)/experimental/dashboard': typeof experimentalExperimentalDashboardRouteRoute
-  '/(experimental)/experimental/logs': typeof experimentalExperimentalLogsRouteRoute
-  '/(experimental)/experimental/profiles': typeof experimentalExperimentalProfilesRouteRoute
-  '/(experimental)/experimental/providers': typeof experimentalExperimentalProvidersRouteRoute
-  '/(experimental)/experimental/proxies': typeof experimentalExperimentalProxiesRouteRoute
-  '/(experimental)/experimental/rules': typeof experimentalExperimentalRulesRouteRoute
-  '/(experimental)/experimental/settings': typeof experimentalExperimentalSettingsRouteRouteWithChildren
-  '/(experimental)/experimental/settings/about': typeof experimentalExperimentalSettingsAboutRouteRoute
-  '/(experimental)/experimental/settings/clash-core': typeof experimentalExperimentalSettingsClashCoreRouteRoute
-  '/(experimental)/experimental/settings/clash-external-controll': typeof experimentalExperimentalSettingsClashExternalControllRouteRoute
-  '/(experimental)/experimental/settings/clash-filed': typeof experimentalExperimentalSettingsClashFiledRouteRoute
-  '/(experimental)/experimental/settings/clash-settings': typeof experimentalExperimentalSettingsClashSettingsRouteRoute
-  '/(experimental)/experimental/settings/debug-utils': typeof experimentalExperimentalSettingsDebugUtilsRouteRoute
-  '/(experimental)/experimental/settings/nyanpasu-config': typeof experimentalExperimentalSettingsNyanpasuConfigRouteRoute
-  '/(experimental)/experimental/settings/system-behavior': typeof experimentalExperimentalSettingsSystemBehaviorRouteRoute
-  '/(experimental)/experimental/settings/system-proxy': typeof experimentalExperimentalSettingsSystemProxyRouteRoute
-  '/(experimental)/experimental/settings/system-service': typeof experimentalExperimentalSettingsSystemServiceRouteRoute
-  '/(experimental)/experimental/settings/user-interface': typeof experimentalExperimentalSettingsUserInterfaceRouteRoute
-  '/(experimental)/experimental/settings/web-ui': typeof experimentalExperimentalSettingsWebUiRouteRoute
-  '/(experimental)/experimental/settings/': typeof experimentalExperimentalSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -332,27 +117,6 @@ export interface FileRouteTypes {
     | '/proxies'
     | '/rules'
     | '/settings'
-    | '/experimental/connections'
-    | '/experimental/dashboard'
-    | '/experimental/logs'
-    | '/experimental/profiles'
-    | '/experimental/providers'
-    | '/experimental/proxies'
-    | '/experimental/rules'
-    | '/experimental/settings'
-    | '/experimental/settings/about'
-    | '/experimental/settings/clash-core'
-    | '/experimental/settings/clash-external-controll'
-    | '/experimental/settings/clash-filed'
-    | '/experimental/settings/clash-settings'
-    | '/experimental/settings/debug-utils'
-    | '/experimental/settings/nyanpasu-config'
-    | '/experimental/settings/system-behavior'
-    | '/experimental/settings/system-proxy'
-    | '/experimental/settings/system-service'
-    | '/experimental/settings/user-interface'
-    | '/experimental/settings/web-ui'
-    | '/experimental/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -364,30 +128,9 @@ export interface FileRouteTypes {
     | '/proxies'
     | '/rules'
     | '/settings'
-    | '/experimental/connections'
-    | '/experimental/dashboard'
-    | '/experimental/logs'
-    | '/experimental/profiles'
-    | '/experimental/providers'
-    | '/experimental/proxies'
-    | '/experimental/rules'
-    | '/experimental/settings/about'
-    | '/experimental/settings/clash-core'
-    | '/experimental/settings/clash-external-controll'
-    | '/experimental/settings/clash-filed'
-    | '/experimental/settings/clash-settings'
-    | '/experimental/settings/debug-utils'
-    | '/experimental/settings/nyanpasu-config'
-    | '/experimental/settings/system-behavior'
-    | '/experimental/settings/system-proxy'
-    | '/experimental/settings/system-service'
-    | '/experimental/settings/user-interface'
-    | '/experimental/settings/web-ui'
-    | '/experimental/settings'
   id:
     | '__root__'
     | '/'
-    | '/(experimental)'
     | '/(legacy)'
     | '/(legacy)/connections'
     | '/(legacy)/dashboard'
@@ -397,32 +140,10 @@ export interface FileRouteTypes {
     | '/(legacy)/proxies'
     | '/(legacy)/rules'
     | '/(legacy)/settings'
-    | '/(experimental)/experimental/connections'
-    | '/(experimental)/experimental/dashboard'
-    | '/(experimental)/experimental/logs'
-    | '/(experimental)/experimental/profiles'
-    | '/(experimental)/experimental/providers'
-    | '/(experimental)/experimental/proxies'
-    | '/(experimental)/experimental/rules'
-    | '/(experimental)/experimental/settings'
-    | '/(experimental)/experimental/settings/about'
-    | '/(experimental)/experimental/settings/clash-core'
-    | '/(experimental)/experimental/settings/clash-external-controll'
-    | '/(experimental)/experimental/settings/clash-filed'
-    | '/(experimental)/experimental/settings/clash-settings'
-    | '/(experimental)/experimental/settings/debug-utils'
-    | '/(experimental)/experimental/settings/nyanpasu-config'
-    | '/(experimental)/experimental/settings/system-behavior'
-    | '/(experimental)/experimental/settings/system-proxy'
-    | '/(experimental)/experimental/settings/system-service'
-    | '/(experimental)/experimental/settings/user-interface'
-    | '/(experimental)/experimental/settings/web-ui'
-    | '/(experimental)/experimental/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  experimentalRouteRoute: typeof experimentalRouteRouteWithChildren
   legacyRouteRoute: typeof legacyRouteRouteWithChildren
 }
 
@@ -433,13 +154,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof legacyRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/(experimental)': {
-      id: '/(experimental)'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof experimentalRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -505,239 +219,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof legacyConnectionsRouteImport
       parentRoute: typeof legacyRouteRoute
     }
-    '/(experimental)/experimental/settings': {
-      id: '/(experimental)/experimental/settings'
-      path: '/experimental/settings'
-      fullPath: '/experimental/settings'
-      preLoaderRoute: typeof experimentalExperimentalSettingsRouteRouteImport
-      parentRoute: typeof experimentalRouteRoute
-    }
-    '/(experimental)/experimental/rules': {
-      id: '/(experimental)/experimental/rules'
-      path: '/experimental/rules'
-      fullPath: '/experimental/rules'
-      preLoaderRoute: typeof experimentalExperimentalRulesRouteRouteImport
-      parentRoute: typeof experimentalRouteRoute
-    }
-    '/(experimental)/experimental/proxies': {
-      id: '/(experimental)/experimental/proxies'
-      path: '/experimental/proxies'
-      fullPath: '/experimental/proxies'
-      preLoaderRoute: typeof experimentalExperimentalProxiesRouteRouteImport
-      parentRoute: typeof experimentalRouteRoute
-    }
-    '/(experimental)/experimental/providers': {
-      id: '/(experimental)/experimental/providers'
-      path: '/experimental/providers'
-      fullPath: '/experimental/providers'
-      preLoaderRoute: typeof experimentalExperimentalProvidersRouteRouteImport
-      parentRoute: typeof experimentalRouteRoute
-    }
-    '/(experimental)/experimental/profiles': {
-      id: '/(experimental)/experimental/profiles'
-      path: '/experimental/profiles'
-      fullPath: '/experimental/profiles'
-      preLoaderRoute: typeof experimentalExperimentalProfilesRouteRouteImport
-      parentRoute: typeof experimentalRouteRoute
-    }
-    '/(experimental)/experimental/logs': {
-      id: '/(experimental)/experimental/logs'
-      path: '/experimental/logs'
-      fullPath: '/experimental/logs'
-      preLoaderRoute: typeof experimentalExperimentalLogsRouteRouteImport
-      parentRoute: typeof experimentalRouteRoute
-    }
-    '/(experimental)/experimental/dashboard': {
-      id: '/(experimental)/experimental/dashboard'
-      path: '/experimental/dashboard'
-      fullPath: '/experimental/dashboard'
-      preLoaderRoute: typeof experimentalExperimentalDashboardRouteRouteImport
-      parentRoute: typeof experimentalRouteRoute
-    }
-    '/(experimental)/experimental/connections': {
-      id: '/(experimental)/experimental/connections'
-      path: '/experimental/connections'
-      fullPath: '/experimental/connections'
-      preLoaderRoute: typeof experimentalExperimentalConnectionsRouteRouteImport
-      parentRoute: typeof experimentalRouteRoute
-    }
-    '/(experimental)/experimental/settings/': {
-      id: '/(experimental)/experimental/settings/'
-      path: '/'
-      fullPath: '/experimental/settings/'
-      preLoaderRoute: typeof experimentalExperimentalSettingsIndexRouteImport
-      parentRoute: typeof experimentalExperimentalSettingsRouteRoute
-    }
-    '/(experimental)/experimental/settings/web-ui': {
-      id: '/(experimental)/experimental/settings/web-ui'
-      path: '/web-ui'
-      fullPath: '/experimental/settings/web-ui'
-      preLoaderRoute: typeof experimentalExperimentalSettingsWebUiRouteRouteImport
-      parentRoute: typeof experimentalExperimentalSettingsRouteRoute
-    }
-    '/(experimental)/experimental/settings/user-interface': {
-      id: '/(experimental)/experimental/settings/user-interface'
-      path: '/user-interface'
-      fullPath: '/experimental/settings/user-interface'
-      preLoaderRoute: typeof experimentalExperimentalSettingsUserInterfaceRouteRouteImport
-      parentRoute: typeof experimentalExperimentalSettingsRouteRoute
-    }
-    '/(experimental)/experimental/settings/system-service': {
-      id: '/(experimental)/experimental/settings/system-service'
-      path: '/system-service'
-      fullPath: '/experimental/settings/system-service'
-      preLoaderRoute: typeof experimentalExperimentalSettingsSystemServiceRouteRouteImport
-      parentRoute: typeof experimentalExperimentalSettingsRouteRoute
-    }
-    '/(experimental)/experimental/settings/system-proxy': {
-      id: '/(experimental)/experimental/settings/system-proxy'
-      path: '/system-proxy'
-      fullPath: '/experimental/settings/system-proxy'
-      preLoaderRoute: typeof experimentalExperimentalSettingsSystemProxyRouteRouteImport
-      parentRoute: typeof experimentalExperimentalSettingsRouteRoute
-    }
-    '/(experimental)/experimental/settings/system-behavior': {
-      id: '/(experimental)/experimental/settings/system-behavior'
-      path: '/system-behavior'
-      fullPath: '/experimental/settings/system-behavior'
-      preLoaderRoute: typeof experimentalExperimentalSettingsSystemBehaviorRouteRouteImport
-      parentRoute: typeof experimentalExperimentalSettingsRouteRoute
-    }
-    '/(experimental)/experimental/settings/nyanpasu-config': {
-      id: '/(experimental)/experimental/settings/nyanpasu-config'
-      path: '/nyanpasu-config'
-      fullPath: '/experimental/settings/nyanpasu-config'
-      preLoaderRoute: typeof experimentalExperimentalSettingsNyanpasuConfigRouteRouteImport
-      parentRoute: typeof experimentalExperimentalSettingsRouteRoute
-    }
-    '/(experimental)/experimental/settings/debug-utils': {
-      id: '/(experimental)/experimental/settings/debug-utils'
-      path: '/debug-utils'
-      fullPath: '/experimental/settings/debug-utils'
-      preLoaderRoute: typeof experimentalExperimentalSettingsDebugUtilsRouteRouteImport
-      parentRoute: typeof experimentalExperimentalSettingsRouteRoute
-    }
-    '/(experimental)/experimental/settings/clash-settings': {
-      id: '/(experimental)/experimental/settings/clash-settings'
-      path: '/clash-settings'
-      fullPath: '/experimental/settings/clash-settings'
-      preLoaderRoute: typeof experimentalExperimentalSettingsClashSettingsRouteRouteImport
-      parentRoute: typeof experimentalExperimentalSettingsRouteRoute
-    }
-    '/(experimental)/experimental/settings/clash-filed': {
-      id: '/(experimental)/experimental/settings/clash-filed'
-      path: '/clash-filed'
-      fullPath: '/experimental/settings/clash-filed'
-      preLoaderRoute: typeof experimentalExperimentalSettingsClashFiledRouteRouteImport
-      parentRoute: typeof experimentalExperimentalSettingsRouteRoute
-    }
-    '/(experimental)/experimental/settings/clash-external-controll': {
-      id: '/(experimental)/experimental/settings/clash-external-controll'
-      path: '/clash-external-controll'
-      fullPath: '/experimental/settings/clash-external-controll'
-      preLoaderRoute: typeof experimentalExperimentalSettingsClashExternalControllRouteRouteImport
-      parentRoute: typeof experimentalExperimentalSettingsRouteRoute
-    }
-    '/(experimental)/experimental/settings/clash-core': {
-      id: '/(experimental)/experimental/settings/clash-core'
-      path: '/clash-core'
-      fullPath: '/experimental/settings/clash-core'
-      preLoaderRoute: typeof experimentalExperimentalSettingsClashCoreRouteRouteImport
-      parentRoute: typeof experimentalExperimentalSettingsRouteRoute
-    }
-    '/(experimental)/experimental/settings/about': {
-      id: '/(experimental)/experimental/settings/about'
-      path: '/about'
-      fullPath: '/experimental/settings/about'
-      preLoaderRoute: typeof experimentalExperimentalSettingsAboutRouteRouteImport
-      parentRoute: typeof experimentalExperimentalSettingsRouteRoute
-    }
   }
 }
-
-interface experimentalExperimentalSettingsRouteRouteChildren {
-  experimentalExperimentalSettingsAboutRouteRoute: typeof experimentalExperimentalSettingsAboutRouteRoute
-  experimentalExperimentalSettingsClashCoreRouteRoute: typeof experimentalExperimentalSettingsClashCoreRouteRoute
-  experimentalExperimentalSettingsClashExternalControllRouteRoute: typeof experimentalExperimentalSettingsClashExternalControllRouteRoute
-  experimentalExperimentalSettingsClashFiledRouteRoute: typeof experimentalExperimentalSettingsClashFiledRouteRoute
-  experimentalExperimentalSettingsClashSettingsRouteRoute: typeof experimentalExperimentalSettingsClashSettingsRouteRoute
-  experimentalExperimentalSettingsDebugUtilsRouteRoute: typeof experimentalExperimentalSettingsDebugUtilsRouteRoute
-  experimentalExperimentalSettingsNyanpasuConfigRouteRoute: typeof experimentalExperimentalSettingsNyanpasuConfigRouteRoute
-  experimentalExperimentalSettingsSystemBehaviorRouteRoute: typeof experimentalExperimentalSettingsSystemBehaviorRouteRoute
-  experimentalExperimentalSettingsSystemProxyRouteRoute: typeof experimentalExperimentalSettingsSystemProxyRouteRoute
-  experimentalExperimentalSettingsSystemServiceRouteRoute: typeof experimentalExperimentalSettingsSystemServiceRouteRoute
-  experimentalExperimentalSettingsUserInterfaceRouteRoute: typeof experimentalExperimentalSettingsUserInterfaceRouteRoute
-  experimentalExperimentalSettingsWebUiRouteRoute: typeof experimentalExperimentalSettingsWebUiRouteRoute
-  experimentalExperimentalSettingsIndexRoute: typeof experimentalExperimentalSettingsIndexRoute
-}
-
-const experimentalExperimentalSettingsRouteRouteChildren: experimentalExperimentalSettingsRouteRouteChildren =
-  {
-    experimentalExperimentalSettingsAboutRouteRoute:
-      experimentalExperimentalSettingsAboutRouteRoute,
-    experimentalExperimentalSettingsClashCoreRouteRoute:
-      experimentalExperimentalSettingsClashCoreRouteRoute,
-    experimentalExperimentalSettingsClashExternalControllRouteRoute:
-      experimentalExperimentalSettingsClashExternalControllRouteRoute,
-    experimentalExperimentalSettingsClashFiledRouteRoute:
-      experimentalExperimentalSettingsClashFiledRouteRoute,
-    experimentalExperimentalSettingsClashSettingsRouteRoute:
-      experimentalExperimentalSettingsClashSettingsRouteRoute,
-    experimentalExperimentalSettingsDebugUtilsRouteRoute:
-      experimentalExperimentalSettingsDebugUtilsRouteRoute,
-    experimentalExperimentalSettingsNyanpasuConfigRouteRoute:
-      experimentalExperimentalSettingsNyanpasuConfigRouteRoute,
-    experimentalExperimentalSettingsSystemBehaviorRouteRoute:
-      experimentalExperimentalSettingsSystemBehaviorRouteRoute,
-    experimentalExperimentalSettingsSystemProxyRouteRoute:
-      experimentalExperimentalSettingsSystemProxyRouteRoute,
-    experimentalExperimentalSettingsSystemServiceRouteRoute:
-      experimentalExperimentalSettingsSystemServiceRouteRoute,
-    experimentalExperimentalSettingsUserInterfaceRouteRoute:
-      experimentalExperimentalSettingsUserInterfaceRouteRoute,
-    experimentalExperimentalSettingsWebUiRouteRoute:
-      experimentalExperimentalSettingsWebUiRouteRoute,
-    experimentalExperimentalSettingsIndexRoute:
-      experimentalExperimentalSettingsIndexRoute,
-  }
-
-const experimentalExperimentalSettingsRouteRouteWithChildren =
-  experimentalExperimentalSettingsRouteRoute._addFileChildren(
-    experimentalExperimentalSettingsRouteRouteChildren,
-  )
-
-interface experimentalRouteRouteChildren {
-  experimentalExperimentalConnectionsRouteRoute: typeof experimentalExperimentalConnectionsRouteRoute
-  experimentalExperimentalDashboardRouteRoute: typeof experimentalExperimentalDashboardRouteRoute
-  experimentalExperimentalLogsRouteRoute: typeof experimentalExperimentalLogsRouteRoute
-  experimentalExperimentalProfilesRouteRoute: typeof experimentalExperimentalProfilesRouteRoute
-  experimentalExperimentalProvidersRouteRoute: typeof experimentalExperimentalProvidersRouteRoute
-  experimentalExperimentalProxiesRouteRoute: typeof experimentalExperimentalProxiesRouteRoute
-  experimentalExperimentalRulesRouteRoute: typeof experimentalExperimentalRulesRouteRoute
-  experimentalExperimentalSettingsRouteRoute: typeof experimentalExperimentalSettingsRouteRouteWithChildren
-}
-
-const experimentalRouteRouteChildren: experimentalRouteRouteChildren = {
-  experimentalExperimentalConnectionsRouteRoute:
-    experimentalExperimentalConnectionsRouteRoute,
-  experimentalExperimentalDashboardRouteRoute:
-    experimentalExperimentalDashboardRouteRoute,
-  experimentalExperimentalLogsRouteRoute:
-    experimentalExperimentalLogsRouteRoute,
-  experimentalExperimentalProfilesRouteRoute:
-    experimentalExperimentalProfilesRouteRoute,
-  experimentalExperimentalProvidersRouteRoute:
-    experimentalExperimentalProvidersRouteRoute,
-  experimentalExperimentalProxiesRouteRoute:
-    experimentalExperimentalProxiesRouteRoute,
-  experimentalExperimentalRulesRouteRoute:
-    experimentalExperimentalRulesRouteRoute,
-  experimentalExperimentalSettingsRouteRoute:
-    experimentalExperimentalSettingsRouteRouteWithChildren,
-}
-
-const experimentalRouteRouteWithChildren =
-  experimentalRouteRoute._addFileChildren(experimentalRouteRouteChildren)
 
 interface legacyRouteRouteChildren {
   legacyConnectionsRoute: typeof legacyConnectionsRoute
@@ -767,7 +250,6 @@ const legacyRouteRouteWithChildren = legacyRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  experimentalRouteRoute: experimentalRouteRouteWithChildren,
   legacyRouteRoute: legacyRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport

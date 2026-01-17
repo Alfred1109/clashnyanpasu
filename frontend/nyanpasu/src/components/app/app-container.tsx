@@ -81,9 +81,8 @@ export const AppContainer = ({
       )}
 
       <div className={styles.container}>
-        {OS === 'windows' && (
-          <LayoutControl className="z-top! fixed top-2 right-4" />
-        )}
+        {/* Window control buttons for all platforms in extreme cleanup version */}
+        <LayoutControl className="z-top! fixed top-2 right-4" />
         <AnimatePresence>
           {OS === 'macos' && !isMaximized && (
             <motion.div

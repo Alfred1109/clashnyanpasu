@@ -171,7 +171,7 @@ pub fn resolve_setup(app: &mut App) {
     #[cfg(any(windows, target_os = "linux"))]
     log::trace!("init system tray");
     #[cfg(any(windows, target_os = "linux"))]
-    tray::icon::resize_images(crate::utils::help::get_max_scale_factor()); // generate latest cache icon by current scale factor
+    // Icon resizing removed in extreme cleanup version // generate latest cache icon by current scale factor
     let app_handle = app.app_handle().clone();
     app.listen("update_systray", move |_| {
         // Fix the GTK should run on main thread issue

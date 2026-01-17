@@ -3,7 +3,7 @@
   "mainBinaryName": "nyanpasu",
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis", "dmg", "deb"],
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
@@ -11,15 +11,10 @@
       "webviewInstallMode": {
         "type": "embedBootstrapper"
       },
-      "wix": {
-        "language": ["en-US", "ru-RU", "zh-CN", "zh-TW"],
-        "template": "./templates/installer.wxs",
-        "fragmentPaths": ["./templates/cleanup.wxs"]
-      },
       "nsis": {
-        "displayLanguageSelector": true,
+        "displayLanguageSelector": false,
         "installerIcon": "icons/icon.ico",
-        "languages": ["English", "Russian", "SimpChinese", "TradChinese"],
+        "languages": ["SimpChinese"],
         "template": "./templates/installer.nsi",
         "installMode": "both"
       }
@@ -45,7 +40,6 @@
     "macOS": {
       "frameworks": [],
       "minimumSystemVersion": "12.6",
-      "exceptionDomain": "",
       "signingIdentity": null,
       "entitlements": null
     },
@@ -58,9 +52,9 @@
     "createUpdaterArtifacts": false
   },
   "build": {
-    "beforeBuildCommand": "pnpm run-p web:build generate:git-info && echo $(pwd)",
+    "beforeBuildCommand": "pnpm run generate:git-info && pnpm --filter=@nyanpasu/nyanpasu build && echo $(pwd)",
     "frontendDist": "./tmp/dist",
-    "beforeDevCommand": "pnpm run web:dev",
+    "beforeDevCommand": "pnpm --filter=@nyanpasu/nyanpasu dev",
     "devUrl": "http://localhost:3000/"
   },
   "productName": "nyanpasu",

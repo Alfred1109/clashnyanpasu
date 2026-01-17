@@ -14,19 +14,13 @@ pub mod simple_service;
 #[serde(tag = "type", content = "data")]
 pub enum PrivilegedOperation {
     /// 设置系统代理
-    SetSystemProxy {
-        enable: bool,
-        port: u16,
-        bypass: Vec<String>,
-    },
+    SetSystemProxy { enable: bool },
     /// 设置TUN模式
     SetTunMode { enable: bool },
     /// 修改网络设置
     ModifyNetworkSettings { dns: Option<Vec<String>> },
     /// 更新核心权限
     UpdateCorePermissions { core_path: PathBuf },
-    /// 重置系统代理
-    ResetSystemProxy,
 }
 
 /// 特权操作处理器接口
@@ -44,9 +38,8 @@ pub trait PrivilegedOperationHandler: Send + Sync {
     /// 检查是否需要用户确认
     fn requires_confirmation(&self, operation: &PrivilegedOperation) -> bool {
         match operation {
-            PrivilegedOperation::SetSystemProxy { .. } | PrivilegedOperation::SetTunMode { .. } => {
-                false
-            }
+            PrivilegedOperation::SetSystemProxy { .. } => false,
+            PrivilegedOperation::SetTunMode { .. } => false,
             _ => true,
         }
     }

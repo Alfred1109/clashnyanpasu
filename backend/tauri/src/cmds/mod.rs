@@ -92,7 +92,7 @@ pub fn parse() -> anyhow::Result<()> {
                 println!("{envs:#?}");
             }
             Commands::PanicDialog { message } => {
-                crate::utils::dialog::panic_dialog(message);
+                log::error!("Panic: {}", message);
             }
             Commands::StatisticWidget { variant } => {
                 nyanpasu_egui::widget::start_statistic_widget(*variant)

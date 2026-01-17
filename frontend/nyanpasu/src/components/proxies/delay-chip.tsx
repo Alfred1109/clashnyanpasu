@@ -1,6 +1,6 @@
 import { memo, useState } from 'react'
-import { useColorSxForDelay } from '@/hooks/theme'
-import { mergeSxProps } from '@/utils/mui-theme'
+// useColorSxForDelay removed in extreme cleanup
+// mergeSxProps removed in extreme cleanup
 import { Bolt } from '@mui/icons-material'
 import { CircularProgress } from '@mui/material'
 import { cn } from '@nyanpasu/ui'
@@ -30,12 +30,10 @@ export const DelayChip = memo(function DelayChip({
   return (
     <FeatureChip
       className={cn(className, loading && '!visible')}
-      sx={mergeSxProps(
-        {
-          ml: 'auto',
-        },
-        useColorSxForDelay(delay),
-      )}
+      sx={{
+        ml: 'auto',
+        color: delay > 1000 ? 'red' : 'green'
+      }}
       label={
         <>
           <span

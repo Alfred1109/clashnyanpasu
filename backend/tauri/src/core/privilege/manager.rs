@@ -50,9 +50,7 @@ impl PrivilegeManager {
 
         // 检查是否为关闭操作
         let is_disable_operation = match &operation {
-            PrivilegedOperation::SetSystemProxy { enable, .. } => !enable,
             PrivilegedOperation::SetTunMode { enable } => !enable,
-            PrivilegedOperation::ResetSystemProxy => true,
             _ => false,
         };
 
@@ -128,26 +126,6 @@ impl PrivilegeManager {
         // 服务不可用时，尝试直接更新配置
         warn!("服务不可用，直接更新配置");
         match &operation {
-            PrivilegedOperation::SetSystemProxy { .. } | PrivilegedOperation::ResetSystemProxy => {
-                // 更新配置关闭系统代理
-                let patch = crate::config::nyanpasu::IVerge {
-                    enable_system_proxy: Some(false),
-                    ..Default::default()
-                };
-
-                match crate::feat::patch_verge(patch).await {
-                    Ok(()) => Ok(PrivilegedOperationResult {
-                        success: true,
-                        message: Some("已关闭系统代理配置".to_string()),
-                        handler_used: "config_direct".to_string(),
-                    }),
-                    Err(e) => Ok(PrivilegedOperationResult {
-                        success: false,
-                        message: Some(format!("配置更新失败: {}", e)),
-                        handler_used: "config_direct".to_string(),
-                    }),
-                }
-            }
             PrivilegedOperation::SetTunMode { .. } => {
                 // 更新配置关闭TUN模式
                 let patch = crate::config::nyanpasu::IVerge {
@@ -179,17 +157,14 @@ impl PrivilegeManager {
     /// 检查并在空闲时停止服务
     async fn check_and_stop_service_if_idle(&self) {
         // 检查是否还有需要服务的功能在运行
-        let (system_proxy_enabled, tun_mode_enabled) = {
+        let tun_mode_enabled = {
             let verge = crate::config::Config::verge();
             let config = verge.latest();
-            (
-                config.enable_system_proxy.unwrap_or(false),
-                config.enable_tun_mode.unwrap_or(false),
-            )
+            config.enable_tun_mode.unwrap_or(false)
         };
 
-        if !system_proxy_enabled && !tun_mode_enabled {
-            info!("系统代理和TUN模式都已关闭，自动停止服务");
+        if !tun_mode_enabled {
+            info!("TUN模式已关闭，自动停止服务");
 
             // 停止服务
             if let Err(e) = crate::core::service::control::stop_service().await {
@@ -198,13 +173,13 @@ impl PrivilegeManager {
                 info!("服务已自动停止");
             }
         } else {
-            info!("系统代理或TUN模式仍在使用，保持服务运行");
+            info!("TUN模式仍在使用，保持服务运行");
         }
     }
 
     /// 自动安装和启动服务
     async fn auto_setup_service(&self) -> Result<()> {
-        info!("自动设置服务以支持系统代理和TUN模式");
+        info!("自动设置服务以支持TUN模式");
 
         if let Some(service_handler) = &self.service_handler {
             // 检查服务当前状态

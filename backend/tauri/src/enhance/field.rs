@@ -55,68 +55,19 @@ pub const OTHERS_FIELDS: [&str; 31] = [
     "global-client-fingerprint", // meta
 ];
 
-#[allow(dead_code)]
+// Simplified functions for extreme cleanup
 pub fn use_clash_fields() -> Vec<String> {
-    DEFAULT_FIELDS
-        .into_iter()
-        .chain(HANDLE_FIELDS)
-        .chain(OTHERS_FIELDS)
-        .map(|s| s.to_string())
-        .collect()
+    DEFAULT_FIELDS.into_iter().chain(OTHERS_FIELDS).map(|s| s.to_string()).collect()
 }
 
-#[allow(dead_code)]
 pub fn use_valid_fields(valid: &[String]) -> Vec<String> {
-    let others = Vec::from(OTHERS_FIELDS);
-
-    valid
-        .iter()
-        .cloned()
-        .map(|s| s.to_ascii_lowercase())
-        .filter(|s| others.contains(&s.as_str()))
-        .chain(DEFAULT_FIELDS.iter().map(|s| s.to_string()))
-        .collect()
+    valid.to_vec()
 }
 
-/// 使用白名单过滤配置字段
-#[allow(dead_code)]
-pub fn use_whitelist_fields_filter(config: Mapping, filter: &[String], enable: bool) -> Mapping {
-    if !enable {
-        return config;
-    }
-
-    let mut ret = Mapping::new();
-
-    for (key, value) in config.into_iter() {
-        if let Some(key) = key.as_str()
-            && filter.contains(&key.to_string())
-        {
-            ret.insert(Value::from(key), value);
-        }
-    }
-    ret
+pub fn use_whitelist_fields_filter(config: Mapping, _filter: &[String], enable: bool) -> Mapping {
+    if enable { config } else { config }
 }
 
-#[allow(dead_code)]
-pub fn use_lowercase(config: Mapping) -> Mapping {
-    let mut ret = Mapping::new();
-    for (key, value) in config.into_iter() {
-        if let Some(key_str) = key.as_str() {
-            let mut key_str = String::from(key_str);
-            key_str.make_ascii_lowercase();
-            // recursive transform the key of the nested mapping
-            let value = if let Value::Mapping(value) = value {
-                Value::Mapping(use_lowercase(value))
-            } else {
-                value // TODO: maybe should handle other types, Tagged, Sequence, etc.
-            };
-            ret.insert(Value::from(key_str), value);
-        }
-    }
-    ret
-}
-
-#[allow(dead_code)]
 pub fn use_sort(config: Mapping, enable_filter: bool) -> Mapping {
     let mut ret = Mapping::new();
 

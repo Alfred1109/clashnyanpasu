@@ -1,4 +1,3 @@
-mod advice;
 mod chain;
 mod field;
 mod merge;
@@ -149,7 +148,7 @@ pub async fn enhance() -> (Mapping, Vec<String>, PostProcessingOutput) {
     config = use_cache(config);
     config = use_sort(config, enable_filter);
 
-    let (_, logs) = advice::chain_advice(&config);
+    let logs = Vec::new(); // Simplified - no advice in extreme cleanup version
     postprocessing_output.advice = logs;
 
     let mut exists_set = HashSet::new();

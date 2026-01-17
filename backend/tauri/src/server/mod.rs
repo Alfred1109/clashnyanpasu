@@ -147,13 +147,14 @@ async fn cache_icon(query: Query<CacheIcon>) -> Response<Body> {
 
 #[derive(Deserialize)]
 struct TrayIconReq {
-    mode: crate::core::tray::icon::TrayIcon,
+    mode: String,
 }
 
 async fn tray_icon(query: Query<TrayIconReq>) -> Response<Body> {
-    let mode = query.mode;
-    let icon = crate::core::tray::icon::get_raw_icon(mode);
-    let mut response = Response::new(Body::from(icon));
+    let _mode = query.mode.clone();
+    // Simplified icon handling in extreme cleanup
+    let default_icon = include_bytes!("../../icons/icon.ico");
+    let mut response = Response::new(Body::from(default_icon.as_slice()));
     response
         .headers_mut()
         .insert("content-type", "image/png".parse().unwrap());

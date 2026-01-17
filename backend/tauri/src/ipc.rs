@@ -23,7 +23,7 @@ use std::{borrow::Cow, collections::VecDeque, path::PathBuf, result::Result as S
 use storage::{StorageOperationError, WebStorage};
 use sysproxy::Sysproxy;
 use tauri::{AppHandle, Manager};
-use tray::icon::TrayIcon;
+// Simplified tray icon handling in extreme cleanup
 
 use tauri_plugin_dialog::{DialogExt, FileDialogBuilder};
 
@@ -481,6 +481,7 @@ pub async fn patch_verge_config(payload: IVerge) -> Result {
     Ok(())
 }
 
+
 /// toggle system proxy with service dependency
 #[tauri::command]
 #[specta::specta]
@@ -490,26 +491,10 @@ pub async fn toggle_system_proxy() -> Result<crate::core::privilege::PrivilegedO
         core::privilege::{PrivilegedOperation, manager::PrivilegeManager},
     };
 
-    let current_enable = Config::verge()
-        .latest()
-        .enable_system_proxy
-        .unwrap_or(false);
+    let current_enable = Config::verge().latest().enable_system_proxy.unwrap_or(false);
 
     let operation = PrivilegedOperation::SetSystemProxy {
         enable: !current_enable,
-        port: Config::verge()
-            .latest()
-            .verge_mixed_port
-            .unwrap_or(Config::clash().data().get_mixed_port()),
-        bypass: Config::verge()
-            .latest()
-            .system_proxy_bypass
-            .clone()
-            .unwrap_or_default()
-            .split(',')
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty())
-            .collect(),
     };
 
     PrivilegeManager::global()
@@ -1072,19 +1057,20 @@ pub mod uwp {
 #[specta::specta]
 pub async fn set_tray_icon(
     app_handle: tauri::AppHandle,
-    mode: TrayIcon,
-    path: Option<PathBuf>,
+    _mode: String,
+    _path: Option<PathBuf>,
 ) -> Result {
-    (crate::core::tray::icon::set_icon(mode, path))?;
+    // Icon setting removed in extreme cleanup version
+    log::info!("Icon setting bypassed in extreme cleanup version");
     (crate::core::tray::Tray::update_part(&app_handle))?;
     Ok(())
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn is_tray_icon_set(mode: TrayIcon) -> Result<bool> {
-    let icon_path = (crate::utils::dirs::tray_icons_path(mode.as_str()))?;
-    Ok(tokio::fs::metadata(icon_path).await.is_ok())
+pub async fn is_tray_icon_set(_mode: String) -> Result<bool> {
+    // Icon checking simplified in extreme cleanup version
+    Ok(false)
 }
 
 // 旧的服务管理模块已被简化的 simple_service 模块替代

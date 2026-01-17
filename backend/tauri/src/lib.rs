@@ -10,10 +10,8 @@ mod config;
 mod consts;
 mod core;
 mod enhance;
-mod event_handler;
 mod feat;
 mod ipc;
-mod logging;
 mod server;
 mod setup;
 
@@ -137,9 +135,7 @@ pub fn run() -> std::io::Result<()> {
                 let _ = crate::utils::open::that(data_dir.join("migration.log"));
             }
 
-            utils::dialog::panic_dialog(&format!(
-                "Failed to finish migration event: {e}\nYou can see the detailed information at migration.log in your local data dir.\nYou're supposed to submit it as the attachment of new issue.",
-            ));
+            log::error!("Failed to finish migration event: {e}\nYou can see the detailed information at migration.log in your local data dir.");
             std::process::exit(1);
         }
 
@@ -193,7 +189,7 @@ pub fn run() -> std::io::Result<()> {
                 .spawn();
             // fallback to show a dialog directly
             if child.is_err() {
-                utils::dialog::panic_dialog(msg.as_str());
+                log::error!("{}", msg);
             }
 
             match Handle::global().app_handle.lock().as_ref() {
@@ -470,8 +466,8 @@ pub fn run() -> std::io::Result<()> {
             utils::help::cleanup_processes(app_handle);
         }
         tauri::RunEvent::WindowEvent { label, event, .. } if label == "main" => match event {
-            tauri::WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
-                core::tray::on_scale_factor_changed(scale_factor);
+            tauri::WindowEvent::ScaleFactorChanged { scale_factor: _, .. } => {
+                // Scale factor change handling removed in extreme cleanup
             }
             tauri::WindowEvent::CloseRequested { .. } => {
                 log::debug!(target: "app", "window close requested");

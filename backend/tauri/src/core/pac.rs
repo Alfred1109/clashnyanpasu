@@ -158,14 +158,8 @@ impl PacManager {
             .verge_mixed_port
             .unwrap_or(Config::clash().data().get_mixed_port());
 
-        let (enable, bypass) = {
-            let verge = Config::verge();
-            let verge = verge.latest();
-            (
-                verge.enable_system_proxy.unwrap_or(false),
-                verge.system_proxy_bypass.clone(),
-            )
-        };
+        // PAC mode is no longer supported in simplified version
+        let (enable, bypass) = (false, None);
 
         #[cfg(target_os = "windows")]
         let default_bypass = "localhost;127.*;192.168.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;172.20.*;172.21.*;172.22.*;172.23.*;172.24.*;172.25.*;172.26.*;172.27.*;172.28.*;172.29.*;172.30.*;172.31.*;<local>";

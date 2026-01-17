@@ -16,9 +16,7 @@ use tauri::{
 };
 use tracing_attributes::instrument;
 
-pub mod icon;
 pub mod proxies;
-pub use self::icon::on_scale_factor_changed;
 use self::proxies::SystemTrayMenuProxiesExt;
 
 #[cfg(target_os = "linux")]
@@ -225,9 +223,9 @@ impl Tray {
                 let mut builder = TrayIconBuilder::with_id(tray_id);
                 #[cfg(any(windows, target_os = "linux"))]
                 {
-                    builder = builder.icon(tauri::image::Image::from_bytes(&icon::get_icon(
-                        &icon::TrayIcon::Normal,
-                    ))?);
+                    // Simplified icon handling in extreme cleanup - use default icon
+                    let default_icon = include_bytes!("../../../icons/icon.ico");
+                    builder = builder.icon(tauri::image::Image::from_bytes(default_icon)?);
                 }
                 #[cfg(target_os = "macos")]
                 {
@@ -329,11 +327,10 @@ impl Tray {
         }
 
         #[allow(unused_variables)]
-        let (system_proxy, tun_mode, enable_tray_text) = {
+        let (tun_mode, enable_tray_text) = {
             let verge = Config::verge();
             let verge = verge.latest();
             (
-                *verge.enable_system_proxy.as_ref().unwrap_or(&false),
                 *verge.enable_tun_mode.as_ref().unwrap_or(&false),
                 *verge.enable_tray_text.as_ref().unwrap_or(&false),
             )
@@ -341,22 +338,11 @@ impl Tray {
 
         #[cfg(any(target_os = "windows", target_os = "linux"))]
         {
-            use icon::TrayIcon;
-
-            let mode = if tun_mode {
-                TrayIcon::Tun
-            } else if system_proxy {
-                TrayIcon::SystemProxy
-            } else {
-                TrayIcon::Normal
-            };
-            let icon = icon::get_icon(&mode);
-            let _ = tray.set_icon(Some(tauri::image::Image::from_bytes(&icon)?));
+            // Simplified icon handling in extreme cleanup - use default icon
+            let default_icon = include_bytes!("../../../icons/icon.ico");
+            let _ = tray.set_icon(Some(tauri::image::Image::from_bytes(default_icon)?));
         }
 
-        let _ = menu
-            .get("system_proxy")
-            .and_then(|item| item.as_check_menuitem()?.set_checked(system_proxy).ok());
         let _ = menu
             .get("tun_mode")
             .and_then(|item| item.as_check_menuitem()?.set_checked(tun_mode).ok());
@@ -371,9 +357,7 @@ impl Tray {
         #[cfg(not(target_os = "linux"))]
         {
             let _ = tray.set_tooltip(Some(&format!(
-                "{}: {}\n{}: {}",
-                t!("tray.system_proxy"),
-                switch_map[&system_proxy],
+                "{}: {}",
                 t!("tray.tun_mode"),
                 switch_map[&tun_mode]
             )));
@@ -382,9 +366,7 @@ impl Tray {
         {
             if enable_tray_text {
                 let _ = tray.set_title(Some(&format!(
-                    "{}: {}\n{}: {}",
-                    t!("tray.system_proxy"),
-                    switch_map[&system_proxy],
+                    "{}: {}",
                     t!("tray.tun_mode"),
                     switch_map[&tun_mode]
                 )));
@@ -406,7 +388,6 @@ impl Tray {
             }
 
             "open_window" => resolve::create_window(app_handle),
-            "system_proxy" => feat::toggle_system_proxy(),
             "tun_mode" => feat::toggle_tun_mode(),
             "copy_env_sh" => feat::copy_clash_env(app_handle, "sh"),
             #[cfg(target_os = "windows")]

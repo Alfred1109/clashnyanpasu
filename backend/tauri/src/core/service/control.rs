@@ -62,7 +62,7 @@ fn run_elevated(
     args: &[OsString],
     show: bool,
 ) -> Result<std::process::ExitStatus, std::io::Error> {
-    use std::{os::windows::process::CommandExt, process::Command};
+    use std::process::Command;
 
     // 首先尝试直接运行，如果失败则提权
     let mut cmd = Command::new(program);

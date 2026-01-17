@@ -1,22 +1,15 @@
 use crate::config::nyanpasu::ExternalControllerPortStrategy;
 use anyhow::{Context, Result, anyhow, bail};
-use display_info::DisplayInfo;
-use fast_image_resize::{
-    FilterType, PixelType, ResizeAlg, ResizeOptions, Resizer,
-    images::{Image, ImageRef},
-};
-use fs_err as fs;
-use image::{ColorType, ImageEncoder, ImageReader, codecs::png::PngEncoder};
 use nanoid::nanoid;
 use serde::{Serialize, de::DeserializeOwned};
 use serde_yaml::{Mapping, Value};
 use std::{
-    io::{BufWriter, Cursor},
+    fs,
     path::{Path, PathBuf},
     str::FromStr,
 };
 use tauri::{AppHandle, Manager, process::current_binary};
-use tracing::{debug, warn};
+use tracing::warn;
 use tracing_attributes::instrument;
 
 use crate::trace_err;
@@ -181,66 +174,6 @@ pub fn get_clash_external_port(
     Ok(port)
 }
 
-pub fn resize_tray_image(img: &[u8], scale_factor: f64) -> Result<Vec<u8>> {
-    let img = ImageReader::new(Cursor::new(img))
-        .with_guessed_format()?
-        .decode()?;
-    let width = img.width();
-    let height = img.height();
-    let src_pixels = img.into_rgba8().into_raw();
-    let src_image = ImageRef::new(width, height, &src_pixels, PixelType::U8x4)
-        .context("failed to parse image")?;
-
-    // Create container for data of destination image
-    let size = (32_f64 * scale_factor).round() as u32; // 32px is the base tray size as the dpi is 96
-    let dst_width = size;
-    let dst_height = size;
-    let mut dst_image = Image::new(dst_width, dst_height, src_image.pixel_type());
-
-    // Create Resizer instance and resize source image
-    // into buffer of destination image
-    let mut resizer = Resizer::new();
-    let resizer_options = ResizeOptions {
-        algorithm: ResizeAlg::Convolution(FilterType::Lanczos3),
-        ..Default::default()
-    };
-    resizer
-        .resize(&src_image, &mut dst_image, &resizer_options)
-        .context("failed to resize image")?;
-
-    // Extract raw pixel data from the destination image
-    let dst_image_data = dst_image.buffer().to_vec();
-
-    // Write destination image as PNG-file
-    let mut result_buf = BufWriter::new(Vec::new());
-    PngEncoder::new(&mut result_buf).write_image(
-        &dst_image_data,
-        dst_width,
-        dst_height,
-        ColorType::Rgba8.into(),
-    )?;
-    Ok(result_buf.into_inner()?)
-}
-
-#[instrument]
-pub fn get_max_scale_factor() -> f64 {
-    match DisplayInfo::all() {
-        Ok(displays) => {
-            let mut scale_factor = 0.0;
-            debug!("displays: {:?}", displays);
-            for display in displays {
-                if display.scale_factor > scale_factor {
-                    scale_factor = display.scale_factor;
-                }
-            }
-            scale_factor as f64
-        }
-        Err(err) => {
-            warn!("failed to get display info: {:?}", err);
-            1.0_f64
-        }
-    }
-}
 
 #[instrument(skip(app_handle))]
 pub fn cleanup_processes(app_handle: &AppHandle) {
@@ -308,13 +241,13 @@ macro_rules! log_err {
 macro_rules! dialog_err {
     ($result: expr) => {
         if let Err(err) = $result {
-            $crate::utils::dialog::error_dialog(format!("{:?}", err));
+            log::error!("Error: {:?}", err);
         }
     };
 
     ($result: expr, $err_str: expr) => {
         if let Err(_) = $result {
-            $crate::utils::dialog::error_dialog($err_str.into());
+            log::error!("Error: {}", $err_str);
         }
     };
 }

@@ -4,9 +4,8 @@
   "license": "GPL-3.0",
   "type": "module",
   "scripts": {
-    "build": "vite build",
-    "bundle:visualize": "vite-bundle-visualizer",
     "dev": "vite",
+    "build": "vite build",
     "serve": "vite preview"
   },
   "dependencies": {

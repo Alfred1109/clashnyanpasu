@@ -124,47 +124,6 @@ impl Sysopt {
         Ok(())
     }
 
-    /// update the system proxy
-    pub fn update_sysproxy(&self) -> Result<()> {
-        // Check if PAC is enabled first
-        #[cfg(feature = "default-meta")]
-        if PacManager::is_pac_enabled() {
-            log::info!(target: "app", "Updating PAC proxy");
-            // For PAC, we don't set the regular system proxy
-            // Instead, we let the PAC manager handle it
-            tauri::async_runtime::spawn(async {
-                log_err!(PacManager::update_pac().await);
-            });
-            return Ok(());
-        }
-
-        let mut cur_sysproxy = self.cur_sysproxy.lock();
-        let old_sysproxy = self.old_sysproxy.lock();
-
-        if cur_sysproxy.is_none() || old_sysproxy.is_none() {
-            drop(cur_sysproxy);
-            drop(old_sysproxy);
-            return self.init_sysproxy();
-        }
-
-        let (enable, bypass) = {
-            let verge = Config::verge();
-            let verge = verge.latest();
-            (
-                verge.enable_system_proxy.unwrap_or(false),
-                verge.system_proxy_bypass.clone(),
-            )
-        };
-        let mut sysproxy = cur_sysproxy.take().unwrap();
-
-        sysproxy.enable = enable;
-        sysproxy.bypass = bypass.unwrap_or(DEFAULT_BYPASS.into());
-
-        sysproxy.set_system_proxy()?;
-        *cur_sysproxy = Some(sysproxy);
-
-        Ok(())
-    }
 
     /// reset the sysproxy
     pub fn reset_sysproxy(&self) -> Result<()> {

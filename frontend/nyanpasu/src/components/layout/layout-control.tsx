@@ -90,9 +90,10 @@ export const LayoutControl = ({ className }: { className?: string }) => {
       try {
         const window = getCurrentWebviewWindow()
         setCurrentAppWindow(window)
-        console.log('Window initialized in useEffect:', !!window)
+        console.log('Window initialized in useEffect:', !!window, 'isInTauri:', isInTauri)
       } catch (error) {
-        console.warn('Failed to get window in useEffect:', error)
+        console.error('Failed to get window in useEffect:', error)
+        console.error('This means window controls will be disabled')
       }
     }
   }, [currentAppWindow])
@@ -135,17 +136,32 @@ export const LayoutControl = ({ className }: { className?: string }) => {
 
       <CtrlButton
         disabled={!isInTauri || !currentAppWindow}
-        onClick={() => currentAppWindow?.minimize()}
+        onClick={async () => {
+          console.log('Minimize button clicked, currentAppWindow:', !!currentAppWindow)
+          if (!currentAppWindow) return
+          try {
+            await currentAppWindow.minimize()
+            console.log('Window minimized successfully')
+          } catch (error) {
+            console.error('Error minimizing window:', error)
+          }
+        }}
       >
         <HorizontalRuleRounded fontSize="small" />
       </CtrlButton>
 
       <CtrlButton
         disabled={!isInTauri || !currentAppWindow}
-        onClick={() => {
-          currentAppWindow?.toggleMaximize().then(() => {
+        onClick={async () => {
+          console.log('Maximize button clicked, currentAppWindow:', !!currentAppWindow)
+          if (!currentAppWindow) return
+          try {
+            await currentAppWindow.toggleMaximize()
             queryClient.invalidateQueries({ queryKey: ['isMaximized'] })
-          })
+            console.log('Window maximize toggled successfully')
+          } catch (error) {
+            console.error('Error toggling maximize:', error)
+          }
         }}
       >
         {isMaximized ? (
@@ -162,14 +178,24 @@ export const LayoutControl = ({ className }: { className?: string }) => {
 
       <CtrlButton
         disabled={!isInTauri || !currentAppWindow}
-        onClick={() => {
-          if (!currentAppWindow) return
-          if (platform === 'windows') {
-            saveWindowSizeState().finally(() => {
-              currentAppWindow.close()
-            })
-          } else {
-            currentAppWindow.close()
+        onClick={async () => {
+          console.log('Close button clicked, platform:', platform, 'currentAppWindow:', !!currentAppWindow)
+          if (!currentAppWindow) {
+            console.warn('No currentAppWindow available')
+            return
+          }
+          
+          try {
+            if (platform === 'windows') {
+              console.log('Windows platform detected, saving window state...')
+              await saveWindowSizeState()
+              await currentAppWindow.close()
+            } else {
+              console.log('Non-windows platform, closing directly...')
+              await currentAppWindow.close()
+            }
+          } catch (error) {
+            console.error('Error closing window:', error)
           }
         }}
       >

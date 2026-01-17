@@ -19,6 +19,3 @@ pub mod dock;
 pub mod platform;
 pub mod sudo;
 
-#[cfg(test)]
-#[cfg(windows)]
-mod winreg_test;

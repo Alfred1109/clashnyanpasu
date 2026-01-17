@@ -1,6 +1,6 @@
 import { useMount } from 'ahooks'
 import dayjs from 'dayjs'
-import { ThemeModeProvider } from '@/components/layout/use-custom-theme'
+// ThemeModeProvider removed in extreme cleanup
 import { useNyanpasuStorageSubscribers } from '@/hooks/use-store'
 import { CssBaseline } from '@mui/material'
 import { StyledEngineProvider, useColorScheme } from '@mui/material/styles'
@@ -82,11 +82,8 @@ export default function App() {
         <LanguageProvider>
           <ExperimentalThemeProvider>
             <StyledEngineProvider injectFirst>
-              <ThemeModeProvider>
-                <CssBaseline />
-
-                <Outlet />
-              </ThemeModeProvider>
+              <CssBaseline />
+              <Outlet />
             </StyledEngineProvider>
           </ExperimentalThemeProvider>
 

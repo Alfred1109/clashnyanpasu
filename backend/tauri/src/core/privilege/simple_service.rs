@@ -205,24 +205,23 @@ pub async fn service_remove() -> Result<String, String> {
 #[command]
 #[specta::specta]
 pub async fn service_recommendation() -> Result<ServiceRecommendation, String> {
-    let (system_proxy_enabled, tun_mode_enabled, service_mode_enabled) = {
+    let (tun_mode_enabled, service_mode_enabled) = {
         let verge = crate::config::Config::verge();
         let config = verge.latest();
         (
-            config.enable_system_proxy.unwrap_or(false),
             config.enable_tun_mode.unwrap_or(false),
             config.enable_service_mode.unwrap_or(false),
         )
     };
 
-    // 如果用户使用了系统代理或TUN模式，但服务未安装，则推荐安装
-    if (system_proxy_enabled || tun_mode_enabled) && !service_mode_enabled {
+    // 如果用户使用了TUN模式，但服务未安装，则推荐安装
+    if tun_mode_enabled && !service_mode_enabled {
         let status = service_status_summary().await?;
         if !status.installed {
             return Ok(ServiceRecommendation {
                 should_recommend: true,
                 title: "建议安装服务模式".to_string(),
-                message: "检测到您正在使用系统代理或TUN模式。安装服务模式可以避免频繁的UAC权限确认，获得更好的使用体验。".to_string(),
+                message: "检测到您正在使用TUN模式。安装服务模式可以避免频繁的UAC权限确认，获得更好的使用体验。".to_string(),
                 benefits: vec![
                     "无需每次确认UAC权限".to_string(),
                     "更快的代理切换速度".to_string(),

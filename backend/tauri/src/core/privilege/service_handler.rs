@@ -21,18 +21,12 @@ impl ServicePrivilegeHandler {
         // 现在先使用现有的服务控制功能作为基础
 
         match operation {
-            PrivilegedOperation::SetSystemProxy {
-                enable,
-                port,
-                bypass,
-            } => {
-                self.set_system_proxy_via_service(*enable, *port, bypass.clone())
-                    .await
+            PrivilegedOperation::SetSystemProxy { enable } => {
+                self.set_system_proxy_via_service(*enable).await
             }
             PrivilegedOperation::SetTunMode { enable } => {
                 self.set_tun_mode_via_service(*enable).await
             }
-            PrivilegedOperation::ResetSystemProxy => self.reset_system_proxy_via_service().await,
             PrivilegedOperation::UpdateCorePermissions { core_path } => {
                 self.update_core_permissions_via_service(core_path.clone())
                     .await
@@ -43,34 +37,18 @@ impl ServicePrivilegeHandler {
         }
     }
 
-    async fn set_system_proxy_via_service(
-        &self,
-        enable: bool,
-        port: u16,
-        bypass: Vec<String>,
-    ) -> Result<()> {
-        info!("通过服务设置系统代理: enable={}, port={}", enable, port);
+    async fn set_system_proxy_via_service(&self, enable: bool) -> Result<()> {
+        info!("通过服务设置系统代理: enable={}", enable);
 
-        // 目前的实现：通过服务重启核心来应用代理设置
-        // 未来可以扩展IPC协议来直接处理代理设置
-
-        // 1. 更新配置（这会触发服务端的配置重新加载）
+        // 1. 更新配置
         let patch = crate::config::nyanpasu::IVerge {
             enable_system_proxy: Some(enable),
-            enable_tun_mode: if enable { Some(false) } else { None },
-            verge_mixed_port: Some(port),
-            system_proxy_bypass: if bypass.is_empty() {
-                None
-            } else {
-                Some(bypass.join(","))
-            },
             ..Default::default()
         };
 
         crate::feat::patch_verge(patch).await?;
 
-        // 2. 通知服务重新配置代理
-        // 这里可以发送特定的IPC消息，现在使用核心重启
+        // 2. 通过服务重启核心以应用代理设置
         self.request_core_restart().await?;
 
         Ok(())
@@ -82,27 +60,12 @@ impl ServicePrivilegeHandler {
         // 1. 更新配置
         let patch = crate::config::nyanpasu::IVerge {
             enable_tun_mode: Some(enable),
-            enable_system_proxy: if enable { Some(false) } else { None }, // 互斥
             ..Default::default()
         };
 
         crate::feat::patch_verge(patch).await?;
 
         // 2. 通过服务重启核心（TUN模式需要特权）
-        self.request_core_restart().await?;
-
-        Ok(())
-    }
-
-    async fn reset_system_proxy_via_service(&self) -> Result<()> {
-        info!("通过服务重置系统代理");
-
-        let patch = crate::config::nyanpasu::IVerge {
-            enable_system_proxy: Some(false),
-            ..Default::default()
-        };
-
-        crate::feat::patch_verge(patch).await?;
         self.request_core_restart().await?;
 
         Ok(())
@@ -156,13 +119,12 @@ impl ServicePrivilegeHandler {
     /// 检查服务是否支持特定操作
     fn supports_operation(&self, operation: &PrivilegedOperation) -> bool {
         match operation {
-            PrivilegedOperation::SetSystemProxy { .. }
-            | PrivilegedOperation::SetTunMode { .. }
-            | PrivilegedOperation::ResetSystemProxy => true,
+            PrivilegedOperation::SetSystemProxy { .. } => true,
+            PrivilegedOperation::SetTunMode { .. } => true,
             PrivilegedOperation::UpdateCorePermissions { .. }
             | PrivilegedOperation::ModifyNetworkSettings { .. } => {
                 // 这些操作需要更多的服务端支持
-                false // 暂时禁用高级服务操作
+                false
             }
         }
     }
@@ -199,9 +161,8 @@ impl PrivilegedOperationHandler for ServicePrivilegeHandler {
     fn requires_confirmation(&self, operation: &PrivilegedOperation) -> bool {
         // 服务模式下，大部分常见操作不需要用户确认
         match operation {
-            PrivilegedOperation::SetSystemProxy { .. }
-            | PrivilegedOperation::SetTunMode { .. }
-            | PrivilegedOperation::ResetSystemProxy => false,
+            PrivilegedOperation::SetSystemProxy { .. } => false,
+            PrivilegedOperation::SetTunMode { .. } => false,
             _ => true, // 高级操作仍需确认
         }
     }
