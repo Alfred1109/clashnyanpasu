@@ -347,7 +347,7 @@ export const getNyanpasuServiceInfo = async ({
   const downloadURL = `https://github.com/${SERVICE_REPO}/releases/download/${version}/${name}-${sidecarHost}.${urlExt}`
   const exeFile = `${name}${isWin ? '.exe' : ''}`
   const tmpFile = `${name}-${sidecarHost}.${urlExt}`
-  const targetFile = `nyanpasu-service-${sidecarHost}${isWin ? '.exe' : ''}`
+  const targetFile = `nyanpasu-service${isWin ? '.exe' : ''}`
   return {
     name: 'nyanpasu-service',
     targetFile,

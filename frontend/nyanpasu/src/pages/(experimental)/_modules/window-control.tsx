@@ -42,6 +42,7 @@ const AlwaysOnTopButton = () => {
   return (
     <CtrlButton
       onClick={handleToggleAlwaysOnTop}
+      disabled={!appWindow}
       data-slot="window-control-always-on-top-button"
     >
       <AnimatePresence mode="wait">
@@ -73,6 +74,7 @@ const MinimizeButton = () => {
   return (
     <CtrlButton
       onClick={handleMinimize}
+      disabled={!appWindow}
       data-slot="window-control-minimize-button"
     >
       <HorizontalRuleRounded className="size-5" />
@@ -113,6 +115,7 @@ const MaximizeButton = () => {
   return (
     <CtrlButton
       onClick={handleToggleMaximize}
+      disabled={!appWindow}
       data-slot="window-control-maximize-button"
     >
       {isMaximized ? (
@@ -131,7 +134,11 @@ const CloseButton = () => {
   }, [])
 
   return (
-    <CtrlButton onClick={handleClose} data-slot="window-control-close-button">
+    <CtrlButton 
+      onClick={handleClose} 
+      disabled={!appWindow}
+      data-slot="window-control-close-button"
+    >
       <CloseRounded className="size-5.5" />
     </CtrlButton>
   )
